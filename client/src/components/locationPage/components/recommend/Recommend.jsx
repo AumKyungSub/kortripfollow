@@ -20,7 +20,8 @@ const Recommend = () => {
         setRegion(null); // id가 바뀌면 이전 데이터 초기화
         setLoading(true);
 
-        fetch(`http://localhost:3000/rankings/${id}`)
+        // fetch(`http://localhost:3000/rankings/${id}`)
+        fetch(`http://https://port-0-kortripfollow-mhg6zzrn5356f2c9.sel3.cloudtype.app/rankings/${id}`)
         .then(res => res.json())
         .then(data => {
             setRegion(data);
