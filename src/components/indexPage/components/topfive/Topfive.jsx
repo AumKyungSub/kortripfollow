@@ -12,7 +12,7 @@ const Topfive = () => {
     const [rankingList, setRankingList] = useState([]);
 
     const getRanking =async()=>{
-      let url = `https://my-json-server.typicode.com/AumKyungSub/kortripfollow/rankings`;
+      let url = `http://172.30.1.1:3000/rankings`;
       let response = await fetch(url);
       let data = await response.json();
 
