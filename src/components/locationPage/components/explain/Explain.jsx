@@ -6,7 +6,7 @@ import { Map, MapMarker,useKakaoLoader } from 'react-kakao-maps-sdk';
 // Page css
 import './Explain.style.css'
 
-const explain = ({item}) => {
+const Explain = ({item}) => {
 
     // Kakao Map Script Load
     useKakaoLoader()
@@ -41,4 +41,4 @@ const explain = ({item}) => {
   )
 }
 
-export default explain
+export default Explain

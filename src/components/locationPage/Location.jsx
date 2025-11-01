@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom'
 import Header from '../Header/Header'
 import Footer from '../footer/Footer'
 import MainImage from './components/mainImage/MainImage'
-import Explain from './components/explain/explain'
+import Explain from './components/explain/Explain'
 import Parking from './components/parking/Parking'
 import Recommend from './components/recommend/Recommend'
 
