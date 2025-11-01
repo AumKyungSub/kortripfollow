@@ -1,0 +1,90 @@
+.seasons {
+    padding: 20px 15px;
+}
+.seasons h3 {
+    width: 100%;
+    text-align: center;
+    /* Font */
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.seasons .cards {
+    /* Flex */
+    display: flex;
+    justify-content: space-around;
+    margin-top: 15px;
+}
+
+.seasons .card {
+    width: 48%;
+    height: 100px;
+    background: rgb(242 242 247);
+    padding: 16px;
+    border: 1px solid #ddd;
+    border-radius: 15px;
+    overflow: hidden;
+    cursor: pointer;
+    /* Position */
+    position: relative;
+}
+
+.catImgCover{
+    width: 50px;
+    height: 50px;
+    background-color: rgb(74 144 226 / 0.1);
+    border-radius: 50%;
+    /* Flex */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Position */
+    position: absolute;
+    left: 50%;
+    top: 30%;
+    transform: translate(-50%, -30%);
+}
+
+.seasons .card img {
+    width: 70%;
+}
+
+.seasons .card p {
+  width: 100%;
+  text-align: center;
+  /* Font */
+  color: rgb(51 51 51);
+  font-size: 1rem;
+  font-weight: bold;
+  /* Flex */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Position */
+  position: absolute;
+  left: 50%;
+  bottom: 10%;
+  transform: translate(-50%, -20%);
+}
+
+/* ---------------------------------------------------- */
+/* 반응형 디자인 media query */
+@media only all and (max-width: 479px) {
+}
+
+@media only all and (min-width: 480px) {
+    .seasons .cards {
+        max-width: 700px;
+        margin: 15px auto 0;
+    }
+}
+
+@media only all and (min-width: 1024px) {
+    .seasons .cards {
+        /* Flex */
+        justify-content: space-between;
+    }
+    .seasons h3 {
+        text-align: left;
+    }
+}

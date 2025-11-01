@@ -1,0 +1,18 @@
+
+
+/* ---------------------------------------------------- */
+/* 반응형 디자인 media query */
+@media only all and (max-width: 479px) {
+}
+
+@media only all and (min-width: 480px) {
+    .regionListWholeCover {
+    /* Flex */
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    }
+}
+
+@media only all and (min-width: 1024px) {
+}

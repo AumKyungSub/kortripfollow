@@ -1,0 +1,119 @@
+.top-places {
+  padding: 20px 15px;
+}
+.top-places h3 {
+  width: 100%;
+  text-align: center;
+  /* Font */
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.top-places .cards {
+  /* Flex */
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.top-places .card {
+  width: 48%;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 15px;
+  overflow: hidden;
+  /* Position */
+  position: relative;
+}
+
+.top-places .card img {
+  width: 100%;
+  height: auto;
+}
+
+.top-places .card span {
+  width: 25%;
+  height: 25%;
+  background-color: #fff;
+  border-radius: 100%;
+  /* Font */
+  font-size: 0.6rem;
+  font-weight: bold;
+  /* Flex */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Position */
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  transform: translate(-50%, -30%);
+}
+
+.top-places .card p {
+  width: 100%;
+  text-align: center;
+  text-shadow: -1px 0px #000, 0px 1px #000, 1px 0px #000, 0px -1px #000;
+  /* Font */
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: bold;
+  /* Flex */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Position */
+  position: absolute;
+  left: 50%;
+  bottom: 20%;
+  transform: translate(-50%, -20%);
+}
+
+/* css 효과 없에기 */
+a {
+  
+}
+
+/* ---------------------------------------------------- */
+/* 반응형 디자인 media query */
+@media only all and (max-width: 479px) {
+}
+
+@media only all and (min-width: 480px) {
+  .top-places .cards {
+    /* Flex */
+    justify-content: safe center;
+  }
+  .top-places .card {
+    width: 30%;
+  }
+  .top-places .card span {
+    /* Font */
+    font-size: 0.7rem;
+  }
+  .top-places .card p {
+    /* Position */
+    bottom: 10%;
+    transform: translate(-50%, -20%);
+  }
+}
+
+@media only all and (min-width: 1024px) {
+  .top-places .cards {
+    /* Flex */
+    justify-content: space-between;
+  }
+  .top-places .card {
+    width: 19%;
+  }
+  .top-places h3 {
+    text-align: left;
+  }
+  .top-places .card p {
+    /* Font */
+    font-size: 1.5rem;
+  }
+
+}

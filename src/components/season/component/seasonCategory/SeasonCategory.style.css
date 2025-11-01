@@ -1,0 +1,48 @@
+.seasonCategoryCover {
+    width: 95%;
+    height: 51px;
+    margin: 10px auto 0;
+    padding: 5px 0;
+    background: rgb(229 231 235 / 0.6);
+    border-radius: 9999px;
+}
+
+.seasonCategoryUI {
+    width: 95%;
+    height: 41px;
+    padding: 0;
+    margin: 0 auto;
+}
+
+.seasonCategoryLi {
+    width: 25%;
+    height: inherit;
+    display: inline-block;
+    cursor: pointer;
+    border-radius: 9999px;
+    text-align: center;
+    /* Font */
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: #6c757d;
+    line-height: 40px;
+}
+
+.seasonCategoryLi.active {  
+  background-color: #fff;
+  /* Font */
+  font-weight: 700;
+  color: #4285f4;
+}
+
+
+/* ---------------------------------------------------- */
+/* 반응형 디자인 media query */
+@media only all and (max-width: 479px) {
+}
+
+@media only all and (min-width: 480px) {
+}
+
+@media only all and (min-width: 1024px) {
+}

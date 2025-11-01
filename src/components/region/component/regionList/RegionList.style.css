@@ -1,0 +1,53 @@
+.regionListCover {
+    width: 95%;
+    margin: 25px auto 0;
+    border: solid 1px #e5e7eb;
+    border-radius: 15px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.regionListCover img {
+    width: 100%;
+}
+
+.regionTextCover {
+    height: 125px;
+    padding: 16px;
+    /* Flex */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.regionName, .regionText {
+    /* Font */
+    font-size: 1rem;
+    color: #6c757d;
+}
+
+.regionLocation {
+    /* Font */
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #212529;
+}
+
+/* ---------------------------------------------------- */
+/* 반응형 디자인 media query */
+@media only all and (max-width: 479px) {
+}
+
+@media only all and (min-width: 480px) {
+    .regionListCover {
+        width: 45%;
+        margin: 25px 10px;
+    }
+}
+
+@media only all and (min-width: 1024px) {
+    .regionListCover {
+        width:15%;
+        margin: 25px 10px;
+    }
+}

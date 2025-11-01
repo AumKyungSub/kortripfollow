@@ -1,0 +1,62 @@
+.topParkingInfo {
+    width: 95%;
+    margin: 15px auto 15px;
+    padding:12px 8px;
+    border-radius: 10px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    /* Position */
+    position: relative;
+}
+
+.topParkingTitle {
+    /* Font */
+    font-size: 1.6rem;
+    font-weight: 900;
+}
+.topParkingTableHead1, .topParkingTableHead2, .parkP strong {
+    /* Font */
+    font-size: 1rem;
+    font-weight: 900;
+    line-height: 1.5;
+}
+
+.parkT {
+    /* Font */
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.parkA {
+    color: #4285f4;
+}
+
+.parkA img {
+    width: 16px;
+}
+
+.parkingInfoCover {
+    /* Flex */
+    display: flex;
+}
+
+.parkingInfoIcon {
+    text-align: center;
+}
+.parkingInfoIcon img{
+    width: 50%;
+}
+
+/* ---------------------------------------------------- */
+/* 반응형 디자인 media query */
+@media only all and (max-width: 479px) {
+}
+
+@media only all and (min-width: 800px) {
+    .parkingInfoCover {
+        margin-left: 58%;
+    }
+}
+
+@media only all and (min-width: 1024px) {    
+}

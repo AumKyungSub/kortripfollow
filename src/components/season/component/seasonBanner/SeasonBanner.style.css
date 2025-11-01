@@ -1,0 +1,65 @@
+.seasonBannerCover {
+    width: 95%;
+    margin: 12px auto;
+    border-radius: 15px;
+    overflow: hidden;
+    /* Position */
+    position: relative;
+}
+
+.seasonBannerImg img {
+    width: 100%;
+}
+
+.seasonBannerText {
+    width: 100%;
+    height: 54px;
+    margin: 24px 24px;
+    /* Font */
+    color: #fff;
+    /* Flex */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    /* Position */
+    position: absolute;
+    bottom: 0;
+}
+
+.seasonBannerH3 {
+    /* Font */
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.seasonBannerP {
+    /* Font */
+    font-size: 0.9rem;
+    
+}
+
+/* ---------------------------------------------------- */
+/* 반응형 디자인 media query */
+@media only all and (max-width: 479px) {
+}
+
+@media only all and (min-width: 480px) {
+    .seasonBannerCover {
+        height: 300px;
+    }
+
+    .seasonBannerImg {
+        width: 100%;
+        height: 100%;
+    }
+
+    .seasonBannerImg img {
+        height: 100%;
+        object-fit: cover;
+        object-position: center center;
+        display: block;
+    }
+}
+
+@media only all and (min-width: 1024px) {
+}

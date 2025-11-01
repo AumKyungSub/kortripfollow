@@ -1,0 +1,73 @@
+.seasonListCover {
+    width: 95%;
+    margin: 0 auto 25px;
+}
+
+.seasonListH3 {
+    padding: 16px 0 8px;
+    /* Font */
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.seasonListImg {
+    width: 100%;
+    border-radius: 15px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.seasonSwiper{
+    width: 70% !important;
+    overflow: hidden;
+    border-radius: 15px;
+    background-color: transparent;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+.seasonListImg img {
+    width: 100%;
+}
+
+.seasonListH4, .seasonListP {
+    margin: 5px 5px;
+}
+
+.seasonListH4 {
+    /* Font */
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.seasonListP{
+    /* Font */
+    font-size: 0.9rem;
+}
+
+/* ---------------------------------------------------- */
+/* 반응형 디자인 */
+@media only all and (max-width: 479px) {
+}
+
+@media only all and (min-width: 700px) and (max-width: 1023px) {
+    .seasonListImg {
+        height: 250px; /* 태블릿 이미지 높이 */
+    }
+
+    .seasonSwiper {
+        width: 60% !important;
+    }
+}
+
+@media only all and (min-width: 1024px) {
+    .seasonListImg {
+        height: 380px; /* PC 이미지 높이 */
+    }
+
+    .seasonSwiper {
+        width: 40% !important;
+    }
+}

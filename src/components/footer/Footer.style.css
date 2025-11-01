@@ -1,0 +1,17 @@
+footer {
+  width: 100%;
+  background: #333;
+  color: #fff;
+  text-align: left;
+  padding: 15px;
+  /* margin-top: 40px; */
+  letter-spacing: 1px;
+}
+footer a {
+  color: #fff;
+  margin: 0 5px;
+  text-decoration: none;
+}
+footer p {
+  margin: 15px 5px 0px;
+}

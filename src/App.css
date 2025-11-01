@@ -1,0 +1,22 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Paperozi';
+}
+
+body {
+  background: #fff;
+  color: #333;
+}
+
+/* ---------------------------------------------------- */
+/* 반응형 디자인 media query */
+@media only all and (max-width: 479px) {
+}
+
+@media only all and (min-width: 480px) and (max-width: 1023px) {
+}
+
+@media only all and (min-width: 1024px) {
+}

@@ -1,0 +1,63 @@
+.topRecommendCover {
+    width: 95%;
+    margin: 1px auto 15px;
+    padding:12px 8px;
+    border-radius: 10px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    /* Position */
+    position: relative;
+}
+
+.topRecommendCover h1 {
+    margin-bottom: 15px;
+    text-align: center;
+    /* Font */
+    font-size: 1.6rem;
+    font-weight: 900;   
+}
+
+.swiper {
+  width: 100%;
+}
+
+.swiper-slide {
+  background-position: center;
+  background-size: cover;
+}
+
+.recoSwiper {
+    width: 70% !important;
+    height: auto;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.swiper-slide img {
+  display: block;
+  width: 100%;
+}
+/* ---------------------------------------------------- */
+/* 반응형 디자인 media query */
+@media only all and (max-width: 479px) {
+}
+
+@media only all and (min-width: 480px) {    
+    .topRecommendCover .topRecommendCard p {
+        font-size: 1.1rem;
+    }
+    
+    .recommendSwiper {
+      width: 60%;
+    }
+}
+
+@media only all and (min-width: 1024px) {    
+    .topRecommendCover .topRecommendCard p {
+        font-size: 1.6rem;
+    }
+    
+    .recommendSwiper {
+      width: 40%;
+    }
+}
