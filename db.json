@@ -222,7 +222,7 @@
     "seasons":[
         {
             "id":"1",
-            "img":"/images/seasons/spring2.jpg",
+            "img":"/images/seasons/spring",
             "textTitle":"봄바람 따라 떠나는 여행",
             "text":"설레는 봄, 지금 떠나기 좋은 곳들을 만나보세요.",
             "season":"봄",
@@ -230,7 +230,7 @@
         },
         {
             "id":"2",
-            "img":"/images/seasons/spring2.jpg",
+            "img":"/images/seasons/spring",
             "textTitle":"꽃길 따라 걷는 시간",
             "text":"따스한 햇살 아래, 마음까지 피어나는 여행을 즐겨보세요.",
             "season":"봄",
@@ -238,7 +238,7 @@
         },
         {
             "id":"3",
-            "img":"/images/seasons/spring2.jpg",
+            "img":"/images/seasons/spring",
             "textTitle":"봄빛에 물든 여행지",
             "text":"새로운 마음으로 떠나는 여행이 일상에 온기를 더해줍니다.",
             "season":"봄",
@@ -246,7 +246,7 @@
         },
         {
             "id":"4",
-            "img":"/images/seasons/spring2.jpg",
+            "img":"/images/seasons/spring",
             "textTitle":"마음이 포근해지는 봄날",
             "text":"느긋한 하루 속에서 계절이 전하는 여유를 느껴보세요.",
             "season":"봄",
@@ -254,7 +254,7 @@
         },
         {
             "id":"5",
-            "img":"/images/seasons/spring2.jpg",
+            "img":"/images/seasons/spring",
             "textTitle":"봄이 부르는 길 위에서",
             "text":"따뜻한 공기와 함께, 당신만의 봄 여행을 시작해보세요.",
             "season":"봄",
@@ -262,7 +262,7 @@
         },
         {
             "id":"6",
-            "img":"/images/seasons/summer5.jpg",
+            "img":"/images/seasons/summer",
             "textTitle":"바다로 떠나는 여름 여행",
             "text":"뜨거운 태양 아래, 시원한 파도와 함께 여름을 만끽해보세요.",
             "season":"여름",
@@ -270,7 +270,7 @@
         },
         {
             "id":"7",
-            "img":"/images/seasons/summer5.jpg",
+            "img":"/images/seasons/summer",
             "textTitle":"햇살이 머무는 시간",
             "text":"찬란한 빛과 함께 여름의 순간을 마음껏 즐겨보세요.",
             "season":"여름",
@@ -278,7 +278,7 @@
         },
         {
             "id":"8",
-            "img":"/images/seasons/summer5.jpg",
+            "img":"/images/seasons/summer",
             "textTitle":"여름밤의 설렘",
             "text":"별빛 아래에서 느긋하게, 여름이 주는 낭만을 즐겨보세요.",
             "season":"여름",
@@ -286,7 +286,7 @@
         },
         {
             "id":"9",
-            "img":"/images/seasons/summer5.jpg",
+            "img":"/images/seasons/summer",
             "textTitle":"뜨거운 여름, 가장 빛나는 순간",
             "text":"계절의 에너지를 따라 떠나는 여행, 그곳에 여름이 있습니다.",
             "season":"여름",
@@ -294,7 +294,7 @@
         },
         {
             "id":"10",
-            "img":"/images/seasons/summer5.jpg",
+            "img":"/images/seasons/summer",
             "textTitle":"여름의 한가운데로",
             "text":"눈부신 햇살과 짙은 초록이 가득한 계절, 지금이 바로 그때예요.",
             "season":"여름",
@@ -302,7 +302,7 @@
         },
         {
             "id":"11",
-            "img":"/images/seasons/fall1.jpg",
+            "img":"/images/seasons/fall",
             "textTitle":"바람에 물드는 계절",
             "text":"선선한 바람과 함께, 가을의 빛깔을 따라 떠나보세요.",
             "season":"가을",
@@ -310,7 +310,7 @@
         },
         {
             "id":"12",
-            "img":"/images/seasons/fall1.jpg",
+            "img":"/images/seasons/fall",
             "textTitle":"단풍이 부르는 여행",
             "text":"가을의 색으로 채워진 길 위에서 특별한 하루를 만나보세요.",
             "season":"가을",
@@ -318,7 +318,7 @@
         },
         {
             "id":"13",
-            "img":"/images/seasons/fall1.jpg",
+            "img":"/images/seasons/fall",
             "textTitle":"풍경이 말을 거는 계절",
             "text":"고요한 길 위에서 계절이 전하는 이야기를 들어보세요.",
             "season":"가을",
@@ -326,7 +326,7 @@
         },
         {
             "id":"14",
-            "img":"/images/seasons/fall1.jpg",
+            "img":"/images/seasons/fall",
             "textTitle":"느리게 걷는 가을 오후",
             "text":"따뜻한 햇살 아래, 잠시 멈춰 계절의 여유를 즐겨보세요.",
             "season":"가을",
@@ -334,7 +334,7 @@
         },
         {
             "id":"15",
-            "img":"/images/seasons/fall1.jpg",
+            "img":"/images/seasons/fall",
             "textTitle":"빛이 머무는 순간, 가을",
             "text":"해질녘의 황금빛 속에서 소중한 추억을 만들어보세요.",
             "season":"가을",
@@ -342,7 +342,7 @@
         },
         {
             "id":"16",
-            "img":"/images/seasons/winter2.jpg",
+            "img":"/images/seasons/winter",
             "textTitle":"눈 내리는 겨울길 위에서",
             "text":"하얗게 물든 세상 속, 고요한 설렘이 시작됩니다.",
             "season":"겨울",
@@ -350,7 +350,7 @@
         },
         {
             "id":"17",
-            "img":"/images/seasons/winter2.jpg",
+            "img":"/images/seasons/winter",
             "textTitle":"하얀 계절의 초대",
             "text":"눈꽃처럼 피어나는 풍경 속으로, 조용한 여행을 떠나보세요.",
             "season":"겨울",
@@ -358,7 +358,7 @@
         },
         {
             "id":"18",
-            "img":"/images/seasons/winter2.jpg",
+            "img":"/images/seasons/winter",
             "textTitle":"포근한 불빛 아래에서",
             "text":"겨울밤의 온기와 함께, 조용한 휴식을 즐겨보세요.",
             "season":"겨울",
@@ -366,7 +366,7 @@
         },
         {
             "id":"19",
-            "img":"/images/seasons/winter2.jpg",
+            "img":"/images/seasons/winter",
             "textTitle":"겨울, 다시 설레는 시간",
             "text":"눈부신 설경과 함께 계절의 특별함을 느껴보세요.",
             "season":"겨울",
@@ -374,7 +374,7 @@
         },
         {
             "id":"20",
-            "img":"/images/seasons/winter2.jpg",
+            "img":"/images/seasons/winter",
             "textTitle":"찬 바람이 전하는 이야기",
             "text":"차분한 산등성이와 고요한 호수, 그 속에 겨울의 깊이가 있습니다.",
             "season":"겨울",
