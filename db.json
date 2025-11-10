@@ -13,7 +13,8 @@
                 "english":"Edelweiss Swiss Theme Park",
                 "region":["경기도","경기 가평군","설악면 다락재로 226-57"],
                 "latLng":"37.6674252959204 , 127.448343508041",
-                "placeID":"23181577"
+                "placeID":"23181577",
+                "homepage":"https://www.swissthemepark.com/"
             },
             "description":{
                 "short":"스위스를 닮은 동화 속 마을",
@@ -52,7 +53,8 @@
                 "english":"Yeonmijeong Pavilion",
                 "region":["경기도","인천 강화군","강화읍 월곳리 242"],
                 "latLng":"37.7709192198651 , 126.511909095981",
-                "placeID":"7999804"
+                "placeID":"7999804",
+                "homepage":"https://www.ganghwa.go.kr/open_content/tour/tour/tourInfoDetail.do?tour_seq=67&tourdiv=eight"
             },
             "description":{
                 "short":"잔잔한 물결과 강바람 속 정자",
@@ -91,7 +93,8 @@
                 "english":"Eodal Junction",
                 "region":["강원도","강원 동해시","어달동 52-4"],
                 "latLng":"37.5661636753346 , 129.119134444133",
-                "placeID":"892201661"
+                "placeID":"892201661",
+                "homepage":""
             },
             "description":{
                 "short":"명소 그 자체",
@@ -130,7 +133,8 @@
                 "english":"Nami Island",
                 "region":["강원도","강원 춘천시","남산면 남이섬길 1"],
                 "latLng":"37.7901249506709 , 127.526128703219",
-                "placeID":"11276521"
+                "placeID":"11276521",
+                "homepage":"https://www.namisum.com/"
             },
             "description":{
                 "short":"가장 아름다운 섬",
@@ -169,7 +173,8 @@
                 "english":"Goseokjeong",
                 "region":["강원도","강원 철원군","동송읍 장흥리 725-13"],
                 "latLng":"38.1849411280676 , 127.287922892408",
-                "placeID":"8176583"
+                "placeID":"8176583",
+                "homepage":"https://www.cwg.go.kr/tour/selectTourCntntsWebView.do?tourNo=382&pageUnit=9&pageIndex=1&searchCnd=all&key=568&ctgry=49&sortTy=RECOMEND"
             },
             "description":{
                 "short":"철원의 옛땅",
@@ -208,7 +213,8 @@
                 "english":"West Five Royal Tombs",
                 "region":["경기도","경기 고양시","덕양구 서오릉로 334-32"],
                 "latLng":"37.6235562459949 , 126.900767390316",
-                "placeID":"18384905"
+                "placeID":"18384905",
+                "homepage":"https://royal.khs.go.kr/ROYAL/contents/R106020000.do?schBdcode=rtm&pageType=story&bdProgramCode=storyCtg7&returnPage=subMain&schBdIdx=20231026060348319376&schIdx=5"
             },
             "description":{
                 "short":"조선 왕들이 잠든",
@@ -247,7 +253,8 @@
                 "english":"The Garden of Morning Calm",
                 "region":["경기도","경기 가평군","상면 수목원로 427"],
                 "latLng":"37.7443214714429 , 127.352876846492",
-                "placeID":"25855305"
+                "placeID":"25855305",
+                "homepage":"https://www.morningcalm.co.kr/"
             },
             "description":{
                 "short":"고요한 자연",
@@ -286,7 +293,8 @@
                 "english":"Bidulginangpokpo",
                 "region":["경기도","경기 포천시","영북면 대회산리 415-2"],
                 "latLng":"38.0799038641015 , 127.216832269645",
-                "placeID":"1255810042"
+                "placeID":"1255810042",
+                "homepage":"https://www.pocheon.go.kr/ktour/viewTnTursmResrceWeb.do?key=7359&resrceNo=217&sa2=CT011001"
             },
             "description":{
                 "short":"자연이 새긴 용암의 흔적",
@@ -325,7 +333,8 @@
                 "english":"CafeSan",
                 "region":["충청도","충북 단양군","가곡면 두산길 196-86 카페산"],
                 "latLng":"36.9946676701953 , 128.394377599647",
-                "placeID":"27502961"
+                "placeID":"27502961",
+                "homepage":"https://www.sann.co.kr/"
             },
             "description":{
                 "short":"하늘위 카페",
@@ -364,7 +373,8 @@
                 "english":"Buseoksa Temple",
                 "region":["충청도","충남 서산시","부석면 부석사길 243"],
                 "latLng":"36.7042396071934 , 126.412208233616",
-                "placeID":"122084252"
+                "placeID":"122084252",
+                "homepage":"http://www.pusoksa.org/main"
             },
             "description":{
                 "short":"세월의 흔적이 깃든 전설의 공간",
@@ -403,7 +413,8 @@
                 "english":"Windy Hill",
                 "region":["경상도","경남 거제시","남부면 갈곶리 산 14-47 도장포마을"],
                 "latLng":"34.7440179875207 , 128.66327958032",
-                "placeID":"25035521"
+                "placeID":"25035521",
+                "homepage":""
             },
             "description":{
                 "short":"바다와 사랑이 머무는 곳",
@@ -442,12 +453,13 @@
                 "english":"Odongdo Island",
                 "region":["전라도","전남 여수시","수정동 산1-11"],
                 "latLng":"34.7448172750447 , 127.765287125777",
-                "placeID":"8483282"
+                "placeID":"8483282",
+                "homepage":""
             },
             "description":{
                 "short":"붉은 동백이 어우러진",
                 "slide":"바다와 숲, 그리고 붉은 동백이 어우러진\n마치 자연이 만든 한 편의 시와 같은 그곳",
-                "title":"동백꽃과 바다의 섬, 여수의 보석",
+                "title":"전라남도 여수시 수정동에 위치한 오동도",
                 "main":"전라남도 여수시 수정동에 위치한 오동도는 여수 신항 부두에서 약 1km 떨어진 곳에 자리한 작은 섬입니다.\n예로부터 오동나무가 많이 자라 오동도라 불렸으며, 섬 전체가 상록수로 덮인 숲과 기암절벽으로 이루어져 있어 사계절 내내 아름다운 풍경을 자랑합니다.\n12월~3월, 오동도는 붉은 동백꽃으로 물듭니다.\n섬 남쪽에는 1935년 일제강점기에 완공된 방파제(길이 768m)가 육지와 섬을 연결하며, 여수의 역사와 함께한 세월의 흔적을 간직하고 있습니다.",
                 "last":"파도 소리 사이로 들려오는 바람의 노래 속에서,\n여수의 따뜻한 정취를 오롯이 느낄수 있는곳\n오동도입니다."
             },
@@ -467,6 +479,46 @@
                 "link":""
             },
             "season":["봄","겨울"]
+        },
+        {
+            "id":13,
+            "top":"",
+            "img": {
+                "link":"/images/detailLocation/sejong/sejong",
+                "gallery":["5","6","7","8","9","10","11","12"],
+                "galleryPc":["4","8","0","00","6"]
+            },
+            "location":{
+                "name":"영녕릉(세종대왕과 효종)",
+                "english":"Yeongnyeongneung",
+                "region":["경기도","경기 여주시","세종대왕면 영릉로 269-50"],
+                "latLng":"37.304933069041 , 127.611332810811",
+                "placeID":"18191517",
+                "homepage":"https://www.instagram.com/sejong_0515"
+            },
+            "description":{
+                "short":"역사와 품격이 살아 있는 왕릉의 조화",
+                "slide":"세종과 효종, 두 왕이 잠든 조선의 왕릉\n조선의 찬란한 문화와 왕실의 격조 높은 예법을 보여주는 공간입니다.",
+                "title":"세종과 효종, 두 왕이 잠든 조선의 왕릉",
+                "main":"경기도 여주시에 위치한 영녕릉(英寧陵)은 조선 제4대 세종대왕과 소헌왕후, 그리고 제17대 효종대왕과 인선왕후의 능인 영릉(英陵)과 영릉(寧陵)을 함께 부르는 이름입니다.\n세계문화유산 ‘조선왕릉’의 일부로, 조선의 역사와 정신이 고스란히 깃든 왕릉입니다.\n영릉(英陵)은소헌왕후가 먼저 세상을 떠나자 1446년 서울 인릉 자리에 능이 조성되었고, 4년 뒤 세종이 세상을 떠나 합장되었으나, 풍수상 불길하다는 이유로 1469년(예종 1)에 지금의 여주로 옮겨졌습니다.\n영릉(寧陵)은1659년 효종이 세상을 떠난 뒤 처음에는 구리 동구릉에 능을 조성했으나, 능침 석물의 문제와 침수 우려로 1673년(현종 14)에 여주로 옮겨졌습니다.",
+                "last":"고요한 소나무 숲길을 따라 걷다 보면, 조용히 잠든 두 왕의 숨결과 함께\n조선의 시간, 그리고 그 정신이 여전히 이어지고 있음을 느낄 수 있는곳\n영녕릉입니다."
+            },
+            "parking":{
+                "existence":true,
+                "fee":false,
+                "address":"경기 여주시 세종대왕면 영릉로 269-10",
+                "addressID":"17578330"
+            },
+            "operating":{
+                "operatingHour": "09:00 ~ 16:30",
+                "closeDay": "매주 월요일 휴무",
+                "entranceFee": "개인: 500원\n단체(10인 이상): 400원" 
+            },
+            "review":{
+                "existence": false,
+                "link":""
+            },
+            "season":["여름"]
         }
     ],
 
