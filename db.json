@@ -11,7 +11,7 @@
             "location":{
                 "name":"에델바이스 스위스 테마파크",
                 "english":"Edelweiss Swiss Theme Park",
-                "region":["경기도","경기 가평군","설악면 다락재로 226-57"],
+                "region":["경기/인천","경기 가평군","설악면 다락재로 226-57"],
                 "latLng":"37.6674252959204 , 127.448343508041",
                 "placeID":"23181577",
                 "homepage":"https://www.swissthemepark.com/"
@@ -51,7 +51,7 @@
             "location":{
                 "name":"연미정",
                 "english":"Yeonmijeong Pavilion",
-                "region":["경기도","인천 강화군","강화읍 월곳리 242"],
+                "region":["경기/인천","인천 강화군","강화읍 월곳리 242"],
                 "latLng":"37.7709192198651 , 126.511909095981",
                 "placeID":"7999804",
                 "homepage":"https://www.ganghwa.go.kr/open_content/tour/tour/tourInfoDetail.do?tour_seq=67&tourdiv=eight"
@@ -91,7 +91,7 @@
             "location":{
                 "name":"어달삼거리",
                 "english":"Eodal Junction",
-                "region":["강원도","강원 동해시","어달동 52-4"],
+                "region":["강원","강원 동해시","어달동 52-4"],
                 "latLng":"37.5661636753346 , 129.119134444133",
                 "placeID":"892201661",
                 "homepage":""
@@ -131,7 +131,7 @@
             "location":{
                 "name":"남이섬",
                 "english":"Nami Island",
-                "region":["강원도","강원 춘천시","남산면 남이섬길 1"],
+                "region":["강원","강원 춘천시","남산면 남이섬길 1"],
                 "latLng":"37.7901249506709 , 127.526128703219",
                 "placeID":"11276521",
                 "homepage":"https://www.namisum.com/"
@@ -171,7 +171,7 @@
             "location":{
                 "name":"고석정",
                 "english":"Goseokjeong",
-                "region":["강원도","강원 철원군","동송읍 장흥리 725-13"],
+                "region":["강원","강원 철원군","동송읍 장흥리 725-13"],
                 "latLng":"38.1849411280676 , 127.287922892408",
                 "placeID":"8176583",
                 "homepage":"https://www.cwg.go.kr/tour/selectTourCntntsWebView.do?tourNo=382&pageUnit=9&pageIndex=1&searchCnd=all&key=568&ctgry=49&sortTy=RECOMEND"
@@ -211,7 +211,7 @@
             "location":{
                 "name":"서오릉",
                 "english":"West Five Royal Tombs",
-                "region":["경기도","경기 고양시","덕양구 서오릉로 334-32"],
+                "region":["경기/인천","경기 고양시","덕양구 서오릉로 334-32"],
                 "latLng":"37.6235562459949 , 126.900767390316",
                 "placeID":"18384905",
                 "homepage":"https://royal.khs.go.kr/ROYAL/contents/R106020000.do?schBdcode=rtm&pageType=story&bdProgramCode=storyCtg7&returnPage=subMain&schBdIdx=20231026060348319376&schIdx=5"
@@ -251,7 +251,7 @@
             "location":{
                 "name":"아침고요수목원",
                 "english":"The Garden of Morning Calm",
-                "region":["경기도","경기 가평군","상면 수목원로 427"],
+                "region":["경기/인천","경기 가평군","상면 수목원로 427"],
                 "latLng":"37.7443214714429 , 127.352876846492",
                 "placeID":"25855305",
                 "homepage":"https://www.morningcalm.co.kr/"
@@ -291,7 +291,7 @@
             "location":{
                 "name":"비둘기낭폭포",
                 "english":"Bidulginangpokpo",
-                "region":["경기도","경기 포천시","영북면 대회산리 415-2"],
+                "region":["경기/인천","경기 포천시","영북면 대회산리 415-2"],
                 "latLng":"38.0799038641015 , 127.216832269645",
                 "placeID":"1255810042",
                 "homepage":"https://www.pocheon.go.kr/ktour/viewTnTursmResrceWeb.do?key=7359&resrceNo=217&sa2=CT011001"
@@ -331,7 +331,7 @@
             "location":{
                 "name":"카페산",
                 "english":"CafeSan",
-                "region":["충청도","충북 단양군","가곡면 두산길 196-86 카페산"],
+                "region":["충청/대전","충북 단양군","가곡면 두산길 196-86 카페산"],
                 "latLng":"36.9946676701953 , 128.394377599647",
                 "placeID":"27502961",
                 "homepage":"https://www.sann.co.kr/"
@@ -371,7 +371,7 @@
             "location":{
                 "name":"부석사",
                 "english":"Buseoksa Temple",
-                "region":["충청도","충남 서산시","부석면 부석사길 243"],
+                "region":["충청/대전","충남 서산시","부석면 부석사길 243"],
                 "latLng":"36.7042396071934 , 126.412208233616",
                 "placeID":"122084252",
                 "homepage":"http://www.pusoksa.org/main"
@@ -411,7 +411,7 @@
             "location":{
                 "name":"바람의 언덕",
                 "english":"Windy Hill",
-                "region":["경상도","경남 거제시","남부면 갈곶리 산 14-47 도장포마을"],
+                "region":["경상/부산/대구/울산","경남 거제시","남부면 갈곶리 산 14-47 도장포마을"],
                 "latLng":"34.7440179875207 , 128.66327958032",
                 "placeID":"25035521",
                 "homepage":""
@@ -451,7 +451,7 @@
             "location":{
                 "name":"오동도",
                 "english":"Odongdo Island",
-                "region":["전라도","전남 여수시","수정동 산1-11"],
+                "region":["전라/광주","전남 여수시","수정동 산1-11"],
                 "latLng":"34.7448172750447 , 127.765287125777",
                 "placeID":"8483282",
                 "homepage":""
@@ -491,7 +491,7 @@
             "location":{
                 "name":"영녕릉(세종대왕과 효종)",
                 "english":"Yeongnyeongneung",
-                "region":["경기도","경기 여주시","세종대왕면 영릉로 269-50"],
+                "region":["경기/인천","경기 여주시","세종대왕면 영릉로 269-50"],
                 "latLng":"37.304933069041 , 127.611332810811",
                 "placeID":"18191517",
                 "homepage":"https://www.instagram.com/sejong_0515"
@@ -531,7 +531,7 @@
             "location":{
                 "name":"한탕강 은하수교 횃불전망대",
                 "english":"Hantangang Milky Way Bridge Torch Observatory",
-                "region":["강원도","강원 철원군","갈말읍 상사리 산 38-3"],
+                "region":["강원","강원 철원군","갈말읍 상사리 산 38-3"],
                 "latLng":"38.2011437137938 , 127.280122640722",
                 "placeID":"898493847",
                 "homepage":"https://www.cwg.go.kr/tour/selectTourCntntsWebView.do?tourNo=428&key=572&ctgry=10"
