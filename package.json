@@ -1,6 +1,6 @@
 {
   "name": "kortripfollow",
-  "version": "1.1.3",
+  "version": "1.2.0",
   "main": "server.js",
   "type": "module",
   "scripts": {
