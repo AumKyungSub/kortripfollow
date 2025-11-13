@@ -12,9 +12,10 @@
                 "name":"에델바이스 스위스 테마파크",
                 "english":"Edelweiss Swiss Theme Park",
                 "region":["경기/인천","경기 가평군","설악면 다락재로 226-57"],
-                "latLng":"37.6674252959204 , 127.448343508041",
+                "latLng":"37.66778444943359 , 127.4474826762202",
                 "placeID":"23181577",
-                "homepage":"https://www.swissthemepark.com/"
+                "homepage":"https://www.swissthemepark.com/",
+                "nearby":""
             },
             "description":{
                 "short":"스위스를 닮은 동화 속 마을",
@@ -26,8 +27,9 @@
             "parking":{
                 "existence":true,
                 "fee":false,
-                "address":"경기 가평군 설악면 다락재로 226-57",
-                "addressID":"23181577"
+                "address":"경기 가평군 설악면 이천리 304-6",
+                "latLng":"37.666021701912086 , 127.45020359066805",
+                "level":3
             },
             "operating":{
                 "operatingHour":"09:00 ~ 16:00",
@@ -54,7 +56,8 @@
                 "region":["경기/인천","인천 강화군","강화읍 월곳리 242"],
                 "latLng":"37.7709192198651 , 126.511909095981",
                 "placeID":"7999804",
-                "homepage":"https://www.ganghwa.go.kr/open_content/tour/tour/tourInfoDetail.do?tour_seq=67&tourdiv=eight"
+                "homepage":"https://www.ganghwa.go.kr/open_content/tour/tour/tourInfoDetail.do?tour_seq=67&tourdiv=eight",
+                "nearby":""
             },
             "description":{
                 "short":"잔잔한 물결과 강바람 속 정자",
@@ -66,8 +69,9 @@
             "parking":{
                 "existence":true,
                 "fee":false,
-                "address":"인천 강화군 강화읍 월곳리 240-4",
-                "addressID":"7999804"
+                "address":"인천 강화군 강화읍 월곳리 216-4",
+                "latLng":"37.77133167167984 , 126.51095150458178",
+                "level":2
             },
             "operating":{
                 "operatingHour": null,
@@ -92,9 +96,10 @@
                 "name":"어달삼거리",
                 "english":"Eodal Junction",
                 "region":["강원","강원 동해시","어달동 52-4"],
-                "latLng":"37.5661636753346 , 129.119134444133",
+                "latLng":"37.56647850124759 , 129.1195366325066",
                 "placeID":"892201661",
-                "homepage":""
+                "homepage":"",
+                "nearby":""
             },
             "description":{
                 "short":"명소 그 자체",
@@ -107,7 +112,8 @@
                 "existence":true,
                 "fee":false,
                 "address":"강원 동해시 일출로 284",
-                "addressID":"412739627"
+                "latLng":"37.56702820712584 , 129.11927494668547",
+                "level":2
             },
             "operating":{
                 "operatingHour": null,
@@ -134,7 +140,8 @@
                 "region":["강원","강원 춘천시","남산면 남이섬길 1"],
                 "latLng":"37.7901249506709 , 127.526128703219",
                 "placeID":"11276521",
-                "homepage":"https://www.namisum.com/"
+                "homepage":"https://www.namisum.com/",
+                "nearby":""
             },
             "description":{
                 "short":"가장 아름다운 섬",
@@ -147,7 +154,8 @@
                 "existence":true,
                 "fee":true,
                 "address":"경기 가평군 가평읍 북한강변로 1024",
-                "addressID":"1535296330"
+                "latLng":"37.804921860289795 , 127.52557244927979",
+                "level":6
             },
             "operating":{
                 "operatingHour": "선박 운항: 08:00 ~ 21:00\n모터 보트: 09:00 ~18:00",
@@ -172,9 +180,10 @@
                 "name":"고석정",
                 "english":"Goseokjeong",
                 "region":["강원","강원 철원군","동송읍 장흥리 725-13"],
-                "latLng":"38.1849411280676 , 127.287922892408",
+                "latLng":"38.185266996045954 , 127.28795430812069",
                 "placeID":"8176583",
-                "homepage":"https://www.cwg.go.kr/tour/selectTourCntntsWebView.do?tourNo=382&pageUnit=9&pageIndex=1&searchCnd=all&key=568&ctgry=49&sortTy=RECOMEND"
+                "homepage":"https://www.cwg.go.kr/tour/selectTourCntntsWebView.do?tourNo=382&pageUnit=9&pageIndex=1&searchCnd=all&key=568&ctgry=49&sortTy=RECOMEND",
+                "nearby":""
             },
             "description":{
                 "short":"철원의 옛땅",
@@ -187,7 +196,8 @@
                 "existence":true,
                 "fee":true,
                 "address":"강원특별자치도 철원군 동송읍 태봉로 1825",
-                "addressID":"8656105"
+                "latLng":"38.18745653493713 , 127.28964084354452",
+                "level":3
             },
             "operating":{
                 "operatingHour": null,
@@ -212,9 +222,10 @@
                 "name":"서오릉",
                 "english":"West Five Royal Tombs",
                 "region":["경기/인천","경기 고양시","덕양구 서오릉로 334-32"],
-                "latLng":"37.6235562459949 , 126.900767390316",
+                "latLng":"37.62461275785625 , 126.9040534294601",
                 "placeID":"18384905",
-                "homepage":"https://royal.khs.go.kr/ROYAL/contents/R106020000.do?schBdcode=rtm&pageType=story&bdProgramCode=storyCtg7&returnPage=subMain&schBdIdx=20231026060348319376&schIdx=5"
+                "homepage":"https://royal.khs.go.kr/ROYAL/contents/R106020000.do?schBdcode=rtm&pageType=story&bdProgramCode=storyCtg7&returnPage=subMain&schBdIdx=20231026060348319376&schIdx=5",
+                "nearby":""
             },
             "description":{
                 "short":"조선 왕들이 잠든",
@@ -226,8 +237,9 @@
             "parking":{
                 "existence":true,
                 "fee":true,
-                "address":"경기 가평군 상면 행현리 622-3",
-                "addressID":"17578387"
+                "address":"경기 고양시 덕양구 용두동 475-95",
+                "latLng":"37.62294331238674 , 126.90088385941387",
+                "level":3
             },
             "operating":{
                 "operatingHour": "2월~5월: 06:00 ~ 18:00 (17:00 티켓 종료)\n6월~8월: 06:00 ~ 18:30 (17:30 티켓 종료)\n11월~1월: 06:00 ~ 17:30 (16:30 티켓 종료)",
@@ -252,9 +264,10 @@
                 "name":"아침고요수목원",
                 "english":"The Garden of Morning Calm",
                 "region":["경기/인천","경기 가평군","상면 수목원로 427"],
-                "latLng":"37.7443214714429 , 127.352876846492",
+                "latLng":"37.74300671623346 , 127.35166352716277",
                 "placeID":"25855305",
-                "homepage":"https://www.morningcalm.co.kr/"
+                "homepage":"https://www.morningcalm.co.kr/",
+                "nearby":""
             },
             "description":{
                 "short":"고요한 자연",
@@ -266,8 +279,9 @@
             "parking":{
                 "existence":true,
                 "fee":false,
-                "address":"경기 가평군 상면 행현리 622-3",
-                "addressID":"18090319"
+                "address":"경기 가평군 상면 행현리 614-2",
+                "latLng":"37.74379952988709 , 127.35318195579235",
+                "level":2
             },
             "operating":{
                 "operatingHour": "08:00 ~ 19:00\n입장마감: 18:00\n개인 주말체험: 5월~10월 10:00~17:00\n단체 체험: 20인 이상 (4계절 모두 운영)",
@@ -292,9 +306,10 @@
                 "name":"비둘기낭폭포",
                 "english":"Bidulginangpokpo",
                 "region":["경기/인천","경기 포천시","영북면 대회산리 415-2"],
-                "latLng":"38.0799038641015 , 127.216832269645",
+                "latLng":"38.07986916576666 , 127.21703458971723",
                 "placeID":"1255810042",
-                "homepage":"https://www.pocheon.go.kr/ktour/viewTnTursmResrceWeb.do?key=7359&resrceNo=217&sa2=CT011001"
+                "homepage":"https://www.pocheon.go.kr/ktour/viewTnTursmResrceWeb.do?key=7359&resrceNo=217&sa2=CT011001",
+                "nearby":""
             },
             "description":{
                 "short":"자연이 새긴 용암의 흔적",
@@ -307,7 +322,8 @@
                 "existence":true,
                 "fee":false,
                 "address":"경기 포천시 영북면 대회산리 410-3",
-                "addressID":"1441127852"
+                "latLng":"38.078970035234704 , 127.21850221302023",
+                "level":3
             },
             "operating":{
                 "operatingHour": "09:00 ~ 18:00",
@@ -334,7 +350,8 @@
                 "region":["충청/대전","충북 단양군","가곡면 두산길 196-86 카페산"],
                 "latLng":"36.9946676701953 , 128.394377599647",
                 "placeID":"27502961",
-                "homepage":"https://www.sann.co.kr/"
+                "homepage":"https://www.sann.co.kr/",
+                "nearby":""
             },
             "description":{
                 "short":"하늘위 카페",
@@ -347,7 +364,8 @@
                 "existence":true,
                 "fee":false,
                 "address":"충북 단양군 가곡면 두산길 196-86 카페산",
-                "addressID":"27502961"
+                "latLng":"36.9946676701953 , 128.394377599647",
+                "level":2
             },
             "operating":{
                 "operatingHour": "평일: 09:30 ~ 19:00\n주말: 09:30 ~ 19:30",
@@ -374,7 +392,8 @@
                 "region":["충청/대전","충남 서산시","부석면 부석사길 243"],
                 "latLng":"36.7042396071934 , 126.412208233616",
                 "placeID":"122084252",
-                "homepage":"http://www.pusoksa.org/main"
+                "homepage":"http://www.pusoksa.org/main",
+                "nearby":""
             },
             "description":{
                 "short":"세월의 흔적이 깃든 전설의 공간",
@@ -387,7 +406,8 @@
                 "existence":true,
                 "fee":true,
                 "address":"충남 서산시 부석면 취평리 154-13",
-                "addressID":"214508601"
+                "latLng":"36.70487925090983 , 126.40901151821843",
+                "level":4
             },
             "operating":{
                 "operatingHour": "08:00 ~ 17:30",
@@ -412,9 +432,10 @@
                 "name":"바람의 언덕",
                 "english":"Windy Hill",
                 "region":["경상/부산/대구/울산","경남 거제시","남부면 갈곶리 산 14-47 도장포마을"],
-                "latLng":"34.7440179875207 , 128.66327958032",
+                "latLng":"34.74461112103253 , 128.663147888803",
                 "placeID":"25035521",
-                "homepage":""
+                "homepage":"",
+                "nearby":""
             },
             "description":{
                 "short":"바다와 사랑이 머무는 곳",
@@ -427,7 +448,8 @@
                 "existence":true,
                 "fee":true,
                 "address":"경남 거제시 남부면 갈곶리 222-2",
-                "addressID":"892152334"
+                "latLng":"34.74288010040623 , 128.66302310886792",
+                "level":3
             },
             "operating":{
                 "operatingHour": null,
@@ -452,9 +474,10 @@
                 "name":"오동도",
                 "english":"Odongdo Island",
                 "region":["전라/광주","전남 여수시","수정동 산1-11"],
-                "latLng":"34.7448172750447 , 127.765287125777",
+                "latLng":"34.74458909717516 , 127.76631053291301",
                 "placeID":"8483282",
-                "homepage":""
+                "homepage":"",
+                "nearby":""
             },
             "description":{
                 "short":"붉은 동백이 어우러진",
@@ -466,8 +489,9 @@
             "parking":{
                 "existence":true,
                 "fee":true,
-                "address":"전남 여수시 수정동 332-35",
-                "addressID":"20579336"
+                "address":"전남 여수시 수정동 332-55",
+                "latLng":"34.74103425900374 , 127.7531194800958",
+                "level":6
             },
             "operating":{
                 "operatingHour": "24시 섬 입장 가능\n동백열차\n하절기 - 09:30 ~ 18:00\n동절기 - 09:30 ~ 17:00\n점심 시간 (12:00 ~ 13:00) 운행 중단",
@@ -492,9 +516,10 @@
                 "name":"영녕릉(세종대왕과 효종)",
                 "english":"Yeongnyeongneung",
                 "region":["경기/인천","경기 여주시","세종대왕면 영릉로 269-50"],
-                "latLng":"37.304933069041 , 127.611332810811",
+                "latLng":"37.309908130583246 , 127.60611694217269",
                 "placeID":"18191517",
-                "homepage":"https://www.instagram.com/sejong_0515"
+                "homepage":"https://www.instagram.com/sejong_0515",
+                "nearby":""
             },
             "description":{
                 "short":"역사와 품격이 살아 있는 왕릉의 조화",
@@ -507,7 +532,8 @@
                 "existence":true,
                 "fee":false,
                 "address":"경기 여주시 세종대왕면 영릉로 269-10",
-                "addressID":"17578330"
+                "latLng":"37.30553930703007 , 127.6128947550548",
+                "level":5
             },
             "operating":{
                 "operatingHour": "09:00 ~ 16:30",
@@ -534,7 +560,8 @@
                 "region":["강원","강원 철원군","갈말읍 상사리 산 38-3"],
                 "latLng":"38.2011437137938 , 127.280122640722",
                 "placeID":"898493847",
-                "homepage":"https://www.cwg.go.kr/tour/selectTourCntntsWebView.do?tourNo=428&key=572&ctgry=10"
+                "homepage":"https://www.cwg.go.kr/tour/selectTourCntntsWebView.do?tourNo=428&key=572&ctgry=10",
+                "nearby":""
             },
             "description":{
                 "short":"대자연과 인공미의 조화",
@@ -547,7 +574,8 @@
                 "existence":true,
                 "fee":false,
                 "address":"강원 철원군 동송읍 장흥리 2583",
-                "addressID":"1918832623"
+                "latLng":"38.1976056903544 , 127.27728614197422",
+                "level":4
             },
             "operating":{
                 "operatingHour": "09:00 ~ 17:00\n매표 마감: 16:00",
