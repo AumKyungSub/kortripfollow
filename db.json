@@ -753,6 +753,48 @@
                 "existence": false,
                 "link":""
             }
+        },
+        {
+            "id":2,
+            "img": {
+                "link":"/images/detailTheme/gomori/gomori",
+                "gallery":["5","6","7","8","9","10"]
+            },
+            "location":{
+                "name":"고모리 691",
+                "english":"Go Mori 691",
+                "region":["경기/인천","경기 포천시","소흘읍 고모루성길 267 고모리691"],
+                "latLng":"37.7968894349749 , 127.1607167879574",
+                "placeID":"8743858",
+                "homepage":"https://blog.naver.com/gomori691k",
+                "instagram":"",
+                "nearby":""
+            },
+            "description":{
+                "slide":"고모리 저수지 근처 아름다운 풍경을 감상하며 즐기는 브런치와 커피",
+                "title":"아름다운 자연 속에서 여유로운 시간",
+                "menu":["흑임자 크림라떼","아메리카노","누룽지 까르보나라","스페셜브런치"],
+                "price":["9,000", "7,000", "25,000", "26,000"],
+                "menuLink" : "https://place.map.kakao.com/8743858#menuInfo"
+            },
+            "info":{
+                "parking":true,
+                "takeOut":false,
+                "pet":false,
+                "reserve":true
+            },
+            "operating":{
+                "operatingHour": "매일 11:30 ~ 21:00",
+                "closeDay": null,
+                "entranceFee": null,
+                "breakTime":"",
+                "lastOrder":"",
+                "etc":""
+            },
+            "review":{
+                "existence": true,
+                "link":"https://blog.naver.com/tripinsouthkorea/223480598203"
+            }
         }
     ],
 
