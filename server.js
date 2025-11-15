@@ -1,57 +1,845 @@
-import express from "express";
-import cors from "cors";
-import fs from "fs";
+{
+    "rankings":[
+        {
+            "id":1,
+            "top":1,
+            "img": {
+                "link":"/images/detailLocation/edelweiss/edelweiss",
+                "gallery":["5","6","7","8","9","10","11","12"],
+                "galleryPc":["4","8","0","3","6"]
+            },
+            "location":{
+                "name":"에델바이스 스위스 테마파크",
+                "english":"Edelweiss Swiss Theme Park",
+                "region":["경기/인천","경기 가평군","설악면 다락재로 226-57"],
+                "latLng":"37.66778444943359 , 127.4474826762202",
+                "placeID":"23181577",
+                "homepage":"https://www.swissthemepark.com/",
+                "nearby":""
+            },
+            "description":{
+                "short":"스위스를 닮은 동화 속 마을",
+                "slide":"작은 성과 뾰족지붕의 집들이 모여\n마치 스위스의 한 마을로 여행을 떠난 듯한 기분을 선사",
+                "title":"도심 속에서 만나는 작은 유럽",
+                "main":"에델바이스 스위스 테마파크는 경기도 가평에 위치한 스위스풍 테마공원으로, 알프스의 아름다운 자연과 동화 같은 마을의 정취를 그대로 옮겨놓은 듯한 곳입니다.\n공원은 32개의 스위스풍 건축물로 이루어져 있으며, 그 안에는 치즈 박물관, 뻐꾸기 시계 박물관, 와인 박물관, 베른 베어 박물관 등 스위스의 문화와 감성을 느낄 수 있는 다양한 전시 공간이 마련되어 있습니다.\n이곳에서는 단순한 관람을 넘어 다양한 체험을 즐길 수 있습니다.",
+                "last":"여행의 피로를 녹여주는 달콤한 여유의 순간\n하루쯤 동화 속을 거닐고 싶은 이들에게 완벽한 여행지\n에델바이스 스위스 테마파크입니다."
+            },
+            "parking":{
+                "existence":true,
+                "fee":false,
+                "address":"경기 가평군 설악면 이천리 304-6",
+                "latLng":"37.666021701912086 , 127.45020359066805",
+                "level":3
+            },
+            "operating":{
+                "operatingHour":"09:00 ~ 16:00",
+                "closeDay":null,
+                "entranceFee":"24개월 ~ 성인: 8,000원\n야간: 8,000원\n가평군민&군인&장애인: 6,000원\n애완동물: 100원"
+            },
+            "review":{
+                "existence":false,
+                "link":""
+            },
+            "season":["여름","겨울"]
+        },
+        {
+            "id":2,
+            "top":"",
+            "img": {
+                "link":"/images/detailLocation/yeonmijeong/yeonmijeong",
+                "gallery":["5","6","7","8","9","10","11","12"],
+                "galleryPc":["4","8","0","3","6"]
+            },
+            "location":{
+                "name":"연미정",
+                "english":"Yeonmijeong Pavilion",
+                "region":["경기/인천","인천 강화군","강화읍 월곳리 242"],
+                "latLng":"37.7709192198651 , 126.511909095981",
+                "placeID":"7999804",
+                "homepage":"https://www.ganghwa.go.kr/open_content/tour/tour/tourInfoDetail.do?tour_seq=67&tourdiv=eight",
+                "nearby":""
+            },
+            "description":{
+                "short":"잔잔한 물결과 강바람 속 정자",
+                "slide":"한때 민간인통제구역으로 일반인의 출입이 제한되었던\n제비꼬리 물길 위의 절경",
+                "title":"물길과 역사가 흐르는 고려의 누정",
+                "main":"인천광역시 강화군 강화읍에 위치한 연미정은 고려시대에 지어진 팔작지붕 형태의 전통 누정입니다.\n연미정이 자리한 월곶리는 한강과 임진강이 합류하는 지점으로,한 물길은 서해로, 다른 하나는 갑곶을 지나 인천으로 흐릅니다.\n이 모양이 마치 제비꼬리와 같다 하여 정자의 이름을 연미정이라 지었다고 전해집니다.\n연미정은 한때 민간인통제구역으로 일반인의 출입이 제한되었지만, 현재는 통제구역 해제로 누구나 자유롭게 관람할 수 있습니다.",
+                "last":"역사와 자연이 어우러진 풍경을 감상하며\n고려의 숨결과 강물 위의 여유를 동시에 느낄 수 있는 곳\n연미정 입니다."
+            },
+            "parking":{
+                "existence":true,
+                "fee":false,
+                "address":"인천 강화군 강화읍 월곳리 216-4",
+                "latLng":"37.77133167167984 , 126.51095150458178",
+                "level":2
+            },
+            "operating":{
+                "operatingHour": null,
+                "closeDay": null,
+                "entranceFee": null
+            },
+            "review":{
+                "existence": true,
+                "link":"https://blog.naver.com/tripinsouthkorea/223476505624"
+            },
+            "season":["여름"]
+        }, 
+        {
+            "id": 3,
+            "top":3,
+            "img": {
+                "link":"/images/detailLocation/eodal/eodal",
+                "gallery":["5","6","7","8"],
+                "galleryPc":["4","8","0","3","6"]
+            },
+            "location":{
+                "name":"어달삼거리",
+                "english":"Eodal Junction",
+                "region":["강원","강원 동해시","어달동 52-4"],
+                "latLng":"37.56647850124759 , 129.1195366325066",
+                "placeID":"892201661",
+                "homepage":"",
+                "nearby":""
+            },
+            "description":{
+                "short":"명소 그 자체",
+                "slide":"바다를 향해 곧게 뻗은 도로 끝에서\n펼쳐지는 시원한 동해",
+                "title":"바다 감성 가득한 포토 명소",
+                "main":"강원도 동해시 어달동에 위치한 이곳은 어달해수욕장과 가까워 접근이 편리한 여행지입니다.\n바다를 향해 곧게 뻗은 도로 끝에서 펼쳐지는 시원한 동해의 풍경은 그 자체로 한 폭의 그림처럼 아름다워, 포토존으로도 많은 사랑을 받고 있습니다.\n또한 어달해수욕장에서 묵호항 수변공원까지 바다를 따라 이어진 산책길이 조성되어 있어, 탁 트인 바다를 감상하며 시원한 바람과 함께 여유로운 산책을 즐기기에 제격입니다.",
+                "last":"걸을수록 마음이 탁 트이는 곳,\n어달동 바다길에서 잠시 쉬어가세요."
+            },
+            "parking":{
+                "existence":true,
+                "fee":false,
+                "address":"강원 동해시 일출로 284",
+                "latLng":"37.56702820712584 , 129.11927494668547",
+                "level":2
+            },
+            "operating":{
+                "operatingHour": null,
+                "closeDay": null,
+                "entranceFee": null
+            },
+            "review":{
+                "existence": false,
+                "link":""
+            },
+            "season":["여름"]
+        },
+        {
+            "id": 4,
+            "top": 4,
+            "img": {
+                "link":"/images/detailLocation/nami/nami",
+                "gallery":["5","6","7","8","9","10","11","12","13"],
+                "galleryPc":["4","8","0","2","6"]
+            },
+            "location":{
+                "name":"남이섬",
+                "english":"Nami Island",
+                "region":["강원","강원 춘천시","남산면 남이섬길 1"],
+                "latLng":"37.7901249506709 , 127.526128703219",
+                "placeID":"11276521",
+                "homepage":"https://www.namisum.com/",
+                "nearby":""
+            },
+            "description":{
+                "short":"가장 아름다운 섬",
+                "slide":"독립된 국가 컨셉의 테마파크 나미나라공화국\n여권 스탬프 받고 다채로운 공간으로",
+                "title":"강과 자연이 만든 낭만의 섬",
+                "main":"강원도 춘천시 남산면에 위치한 북한강의 작은 섬으로, 1960년대 중반부터 종합 휴양지로 개발되어 지금은 국내 대표 관광지로 자리 잡았습니다.\n특히 드라마 겨울연가의 촬영지로 알려지며 전 세계 관광객들에게도 널리 사랑받고 있습니다. \n현재는 나미나라공화국이라는 독립된 테마파크 개념으로 운영되고 있으며, 사계절 내내 다양한 문화와 자연의 아름다움을 즐길 수 있는 특별한 여행지입니다.",
+                "last":"잔잔한 강바람과 함께 걷는 길 위에서 \n하루쯤은 시간의 흐름을 천천히 느껴보세요.\n마음이 머무는 곳, 남이섬입니다."
+            },
+            "parking":{
+                "existence":true,
+                "fee":true,
+                "address":"경기 가평군 가평읍 북한강변로 1024",
+                "latLng":"37.804921860289795 , 127.52557244927979",
+                "level":6
+            },
+            "operating":{
+                "operatingHour": "선박 운항: 08:00 ~ 21:00\n모터 보트: 09:00 ~18:00",
+                "closeDay": null,
+                "entranceFee": "입장권: 13,000 ~ 48,500원\n입도(모토)+출도(선박): 21,000 ~ 72,500원 \n남이섬 여권(1년 무제한): 59,000 ~ 98,000"
+            },
+            "review":{
+                "existence": false,
+                "link":""
+            },
+            "season":["사계절"]
+        },
+        {
+            "id":5,
+            "top":5,
+            "img": {
+                "link":"/images/detailLocation/goseokjeong/goseokjeong",
+                "gallery":["5","6","7","8","9","10"],
+                "galleryPc":["4","8","0","00","9"]
+            },
+            "location":{
+                "name":"고석정",
+                "english":"Goseokjeong",
+                "region":["강원","강원 철원군","동송읍 장흥리 725-13"],
+                "latLng":"38.185266996045954 , 127.28795430812069",
+                "placeID":"8176583",
+                "homepage":"https://www.cwg.go.kr/tour/selectTourCntntsWebView.do?tourNo=382&pageUnit=9&pageIndex=1&searchCnd=all&key=568&ctgry=49&sortTy=RECOMEND",
+                "nearby":""
+            },
+            "description":{
+                "short":"철원의 옛땅",
+                "slide":"푸른 한탄강 위에 떠 있는 고석\n그 위로 이어지는 시간의 흔적",
+                "title":"철원 9경이 품은 한탄강의 절경",
+                "main":"철원 9경 중 하나로, 한탄강 중류에 자리한 명승지입니다.\n서기 610년, 신라 진평왕 때 고석바위 맞은편에 10평 규모의 2층 누각을 세우며 ‘고석정’이라 이름 붙였다고 전해집니다.\n이후 조선 명종(1560년) 때는 의적 임꺽정이 정자 건너편에 석성을 쌓고 은신했다는 이야기가 남아 있습니다.\n한국전쟁 중 소실된 누각은 1971년에 복원되었으며, 1989년 다시 개축되어 지금의 모습으로 정비되었습니다.",
+                "last":"단순한 풍경을 넘어,\n한 시대의 이야기를 품은 곳 고석정입니다."
+            },
+            "parking":{
+                "existence":true,
+                "fee":true,
+                "address":"강원특별자치도 철원군 동송읍 태봉로 1825",
+                "latLng":"38.18745653493713 , 127.28964084354452",
+                "level":3
+            },
+            "operating":{
+                "operatingHour": null,
+                "closeDay": null,
+                "entranceFee": null
+            },
+            "review":{
+                "existence": false,
+                "link":""
+            },
+            "season":["여름"]
+        },
+        {
+            "id":6,
+            "top":"",
+            "img": {
+                "link":"/images/detailLocation/seooreung/seooreung",
+                "gallery":["5","6","7","8","9"],
+                "galleryPc":["4","8","00","000","7"]
+            },
+            "location":{
+                "name":"서오릉",
+                "english":"West Five Royal Tombs",
+                "region":["경기/인천","경기 고양시","덕양구 서오릉로 334-32"],
+                "latLng":"37.62461275785625 , 126.9040534294601",
+                "placeID":"18384905",
+                "homepage":"https://royal.khs.go.kr/ROYAL/contents/R106020000.do?schBdcode=rtm&pageType=story&bdProgramCode=storyCtg7&returnPage=subMain&schBdIdx=20231026060348319376&schIdx=5",
+                "nearby":""
+            },
+            "description":{
+                "short":"조선 왕들이 잠든",
+                "slide":"조선의 왕들이 잠든 고양 서오릉\n산책처럼 즐기는 유네스코의 세계문화유산 여행",
+                "title":"조선의 시간을 품은 왕릉군",
+                "main":"서오릉은 경기도 고양시에 위치한 조선 왕실의 대표적인 능묘군으로, ‘서쪽의 다섯 능’이라는 뜻을 지니고 있습니다.\n1457년 세조의 아들 의경세자의 경릉을 시작으로, 예종의 창릉과 숙종의 명릉 등 왕과 왕비의 능이 조성되었습니다.\n이후 순회세자의 순창원, 인경왕후의 익릉, 정성왕후의 홍릉이 더해지며 조선 왕실의 성역이 완성되었습니다.\n1970년대에는 영빈 이씨의 수경원과 옥산부대빈 장씨의 대빈묘가 이장되어 현재의 서오릉 형태를 갖추었습니다.",
+                "last":"유네스코 세계문화유산으로 지정된\n역사를 담은 숲길이자, 시간 속에 머무는 쉼의 공간\n서오릉 입니다."
+            },
+            "parking":{
+                "existence":true,
+                "fee":true,
+                "address":"경기 고양시 덕양구 용두동 475-95",
+                "latLng":"37.62294331238674 , 126.90088385941387",
+                "level":3
+            },
+            "operating":{
+                "operatingHour": "2월~5월: 06:00 ~ 18:00 (17:00 티켓 종료)\n6월~8월: 06:00 ~ 18:30 (17:30 티켓 종료)\n11월~1월: 06:00 ~ 17:30 (16:30 티켓 종료)",
+                "closeDay": "매주 월요일 휴무",
+                "entranceFee": "성인 개인: 1,000원\n성인 단체: 800원 (11명 이상)\n7세~18세 개인: 500원\n7세~18세 단체: 400원 (11명 이상)"
+            },
+            "review":{
+                "existence": false,
+                "link":""
+            },
+            "season":["여름"]
+        },
+        {
+            "id":7,
+            "top":"",
+            "img": {
+                "link":"/images/detailLocation/morningcalm/morningcalm",
+                "gallery":["5","6","7","8"],
+                "galleryPc":["4","5","0","2","6"]
+            },
+            "location":{
+                "name":"아침고요수목원",
+                "english":"The Garden of Morning Calm",
+                "region":["경기/인천","경기 가평군","상면 수목원로 427"],
+                "latLng":"37.74300671623346 , 127.35166352716277",
+                "placeID":"25855305",
+                "homepage":"https://www.morningcalm.co.kr/",
+                "nearby":""
+            },
+            "description":{
+                "short":"고요한 자연",
+                "slide":"햇살이 부드럽게 내려앉는 아침\n아침고요수목원에서 자연이 들려주는 평온한 이야기에 귀 기울여보세요.",
+                "title":"자연이 머무는 정원",
+                "main":"아침고요수목원은 경기도 가평군 축령산 자락에 자리한 한국 정원예술의 대표 공간입니다.\n1996년 개장 이후 약 33만㎡의 부지에 22개의 테마정원과 5,000여 종의 식물이 사계절의 아름다움을 선사합니다.\n자연의 고요함 속에서 휴식과 치유를 느낄 수 있는 곳으로, 한국적 정원의 미와 생태적 조화를 담고 있습니다.\n계절마다 열리는 꽃축제와 겨울 오색별빛정원전은 방문객에게 특별한 감동을 전합니다.",
+                "last":"고요한 숲길을 걷다 보면 마음이 맑아지고\n자연이 전하는 위로를 느낄 수 있는곳\n아침고요수목원 입니다."
+            },
+            "parking":{
+                "existence":true,
+                "fee":false,
+                "address":"경기 가평군 상면 행현리 614-2",
+                "latLng":"37.74379952988709 , 127.35318195579235",
+                "level":2
+            },
+            "operating":{
+                "operatingHour": "08:00 ~ 19:00\n입장마감: 18:00\n개인 주말체험: 5월~10월 10:00~17:00\n단체 체험: 20인 이상 (4계절 모두 운영)",
+                "closeDay": null,
+                "entranceFee": "일반 성인: 11,000원\n청소년: 8,500\n어린이: 7,500원\n우대 어른: 9,000원\n청소년, 어린이: 6,500월\n가평군민 어른: 8,000원\n청소년, 어린이: 6,000원"
+            },
+            "review":{
+                "existence": false,
+                "link":""
+            },
+            "season":["봄"]
+        },
+        {
+            "id":8,
+            "top":"",
+            "img": {
+                "link":"/images/detailLocation/bidulginangpokpo/bidulginangpokpo",
+                "gallery":["5","6","7","8","9","10","11","12","13"],
+                "galleryPc":["4","8","0","00","6"]
+            },
+            "location":{
+                "name":"비둘기낭폭포",
+                "english":"Bidulginangpokpo",
+                "region":["경기/인천","경기 포천시","영북면 대회산리 415-2"],
+                "latLng":"38.07986916576666 , 127.21703458971723",
+                "placeID":"1255810042",
+                "homepage":"https://www.pocheon.go.kr/ktour/viewTnTursmResrceWeb.do?key=7359&resrceNo=217&sa2=CT011001",
+                "nearby":""
+            },
+            "description":{
+                "short":"자연이 새긴 용암의 흔적",
+                "slide":"깊은 협곡과 흰 물줄기가 어우러진 풍경 속에서\n한탄강의 시간을 조용히 흐르고 있는 폭포",
+                "title":"한탄강이 품은 신비의 폭포",
+                "main":"비둘기낭폭포는 한탄강 8경 중 하나로, 약 27만 년 전 용암이 흘러내리며 형성된 현무암 협곡 속에서 태어났습니다.\n특히 용암 분출 이후 형성된 침식 기준면의 변화와 그에 따른 수계 발달 및 폭포 형성 과정은 지형·지질학적으로 매우 높은 연구 가치를 지니고 있습니다.\n한탄강댐 건설로 인해 물의 수위가 높아지면, 이곳의 폭포가 언젠가 물속에 잠길 수도 있다는 이야기도 있습니다.\n2012년 9월 26일, 천연기념물 제537호 ‘포천 한탄강 현무암 협곡과 비둘기낭폭포’로 지정되어 그 가치를 인정받고 있습니다.",
+                "last":"푸른 강줄기와 검은 현무암이 만들어내는 대조 속에서\n자연의 위대함과 고요한 아름다움을 동시에 전해주는\n비둘기낭폭포입니다."
+            },
+            "parking":{
+                "existence":true,
+                "fee":false,
+                "address":"경기 포천시 영북면 대회산리 410-3",
+                "latLng":"38.078970035234704 , 127.21850221302023",
+                "level":3
+            },
+            "operating":{
+                "operatingHour": "09:00 ~ 18:00",
+                "closeDay": null,
+                "entranceFee": null
+            },
+            "review":{
+                "existence": true,
+                "link":"https://blog.naver.com/tripinsouthkorea/223494547681"
+            },
+            "season":["가을"]
+        },
+        {
+            "id":9,
+            "top":"",
+            "img": {
+                "link":"/images/detailLocation/buseoksa/buseoksa",
+                "gallery":["5","6","7","8","9","10","11"],
+                "galleryPc":["4","8","0","3","6"]
+            },
+            "location":{
+                "name":"부석사",
+                "english":"Buseoksa Temple",
+                "region":["충청/대전","충남 서산시","부석면 부석사길 243"],
+                "latLng":"36.7042396071934 , 126.412208233616",
+                "placeID":"122084252",
+                "homepage":"http://www.pusoksa.org/main",
+                "nearby":""
+            },
+            "description":{
+                "short":"세월의 흔적이 깃든 전설의 공간",
+                "slide":"의상을 지키기 위해 용이 된 선묘의 사랑\n부석사의 이름과 전설로 남았있는 전설",
+                "title":"떠 있는 바위의 전설을 간직한 고찰",
+                "main":"충청남도 문화재자료 제195호로 지정된 부석사(浮石寺)는 신라 문무왕 17년(677년), 고승 의상대사가 창건한 사찰로 알려져 있습니다.\n조선 초에는 무학대사가 다시 중건했으며, 근대에는 만공 스님이 머물며 선풍을 크게 떨친 곳으로 전해집니다.\n부석사 경내에는 극락전, 안양루, 관음전, 산신각 등이 있습니다.\n그중 극락전의 목조아미타여래좌상은 1689년, 숙종의 왕자(후의 경종) 탄생을 기념해 조성된 불상으로, 원래는 용봉사에 있었으나 1905년 이곳으로 옮겨왔습니다.",
+                "last":"도비산 자락의 고요한 바람 속에서,\n지금도 그 옛 이야기가 잔잔히 흐르고 있는\n부석사입니다."
+            },
+            "parking":{
+                "existence":true,
+                "fee":true,
+                "address":"충남 서산시 부석면 취평리 154-13",
+                "latLng":"36.70487925090983 , 126.40901151821843",
+                "level":4
+            },
+            "operating":{
+                "operatingHour": "08:00 ~ 17:30",
+                "closeDay": null,
+                "entranceFee": null
+            },
+            "review":{
+                "existence": false,
+                "link":""
+            },
+            "season":["여름","가을"]
+        },
+        {
+            "id":10,
+            "top":2,
+            "img": {
+                "link":"/images/detailLocation/windyhill/windyhill",
+                "gallery":["5","6","7","8","9","10"],
+                "galleryPc":["4","8","0","3","6"]
+            },
+            "location":{
+                "name":"바람의 언덕",
+                "english":"Windy Hill",
+                "region":["경상/부산/대구/울산","경남 거제시","남부면 갈곶리 산 14-47 도장포마을"],
+                "latLng":"34.74461112103253 , 128.663147888803",
+                "placeID":"25035521",
+                "homepage":"",
+                "nearby":""
+            },
+            "description":{
+                "short":"바다와 사랑이 머무는 곳",
+                "slide":"탁 트인 풍경과 이국적인 매력\n서로를 바라보던 두 사람의 사랑처럼 푸른 바다와 하늘이 맞닿아 있는 그곳",
+                "title":"바람이 스치는 언덕 끝에 서면",
+                "main":"거제시 남부면 도장포 마을 북쪽에 자리한 바람의 언덕은 끝없이 펼쳐진 바다와 시원한 바람이 어우러진 거제의 대표 명소입니다.\n원래 이름은 ‘띠가 덮인 언덕’이라는 뜻의 '띠밭늘’이었으나, 2002년부터 ‘바람의 언덕’으로 불리며 많은 사람들의 사랑을 받게 되었습니다.\n드라마 ‘이브의 화원’(2003), ‘회전목마’(2004), 영화 ‘종려나무 숲’(2005), 그리고 예능 ‘1박 2일’의 촬영지로 유명합니다.",
+                "last":"세월이 흘러도 변치 않는 그 풍경 속에서,\n당신의 마음에도 바람 한 줄기가 머물러 갈 그곳\n바람의언덕입니다."
+            },
+            "parking":{
+                "existence":true,
+                "fee":true,
+                "address":"경남 거제시 남부면 갈곶리 222-2",
+                "latLng":"34.74288010040623 , 128.66302310886792",
+                "level":3
+            },
+            "operating":{
+                "operatingHour": null,
+                "closeDay": null,
+                "entranceFee": null
+            },
+            "review":{
+                "existence": false,
+                "link":""
+            },
+            "season":["가을","겨울"]
+        },
+        {
+            "id":11,
+            "top":"",
+            "img": {
+                "link":"/images/detailLocation/odongdo/odongdo",
+                "gallery":["5","6","7","8","9","10","11","12"],
+                "galleryPc":["4","8","0","3","6"]
+            },
+            "location":{
+                "name":"오동도",
+                "english":"Odongdo Island",
+                "region":["전라/광주","전남 여수시","수정동 산1-11"],
+                "latLng":"34.74458909717516 , 127.76631053291301",
+                "placeID":"8483282",
+                "homepage":"",
+                "nearby":""
+            },
+            "description":{
+                "short":"붉은 동백이 어우러진",
+                "slide":"바다와 숲, 그리고 붉은 동백이 어우러진\n마치 자연이 만든 한 편의 시와 같은 그곳",
+                "title":"전라남도 여수시 수정동에 위치한 오동도",
+                "main":"전라남도 여수시 수정동에 위치한 오동도는 여수 신항 부두에서 약 1km 떨어진 곳에 자리한 작은 섬입니다.\n예로부터 오동나무가 많이 자라 오동도라 불렸으며, 섬 전체가 상록수로 덮인 숲과 기암절벽으로 이루어져 있어 사계절 내내 아름다운 풍경을 자랑합니다.\n12월~3월, 오동도는 붉은 동백꽃으로 물듭니다.\n섬 남쪽에는 1935년 일제강점기에 완공된 방파제(길이 768m)가 육지와 섬을 연결하며, 여수의 역사와 함께한 세월의 흔적을 간직하고 있습니다.",
+                "last":"파도 소리 사이로 들려오는 바람의 노래 속에서,\n여수의 따뜻한 정취를 오롯이 느낄수 있는곳\n오동도입니다."
+            },
+            "parking":{
+                "existence":true,
+                "fee":true,
+                "address":"전남 여수시 수정동 332-55",
+                "latLng":"34.74103425900374 , 127.7531194800958",
+                "level":6
+            },
+            "operating":{
+                "operatingHour": "24시 섬 입장 가능\n동백열차\n하절기 - 09:30 ~ 18:00\n동절기 - 09:30 ~ 17:00\n점심 시간 (12:00 ~ 13:00) 운행 중단",
+                "closeDay": null,
+                "entranceFee": null
+            },
+            "review":{
+                "existence": false,
+                "link":""
+            },
+            "season":["봄","겨울"]
+        },
+        {
+            "id":12,
+            "top":"",
+            "img": {
+                "link":"/images/detailLocation/sejong/sejong",
+                "gallery":["5","6","7","8","9","10","11","12"],
+                "galleryPc":["4","8","0","00","6"]
+            },
+            "location":{
+                "name":"영녕릉(세종대왕과 효종)",
+                "english":"Yeongnyeongneung",
+                "region":["경기/인천","경기 여주시","세종대왕면 영릉로 269-50"],
+                "latLng":"37.309908130583246 , 127.60611694217269",
+                "placeID":"18191517",
+                "homepage":"https://www.instagram.com/sejong_0515",
+                "nearby":""
+            },
+            "description":{
+                "short":"역사와 품격이 살아 있는 왕릉의 조화",
+                "slide":"세종과 효종, 두 왕이 잠든 조선의 왕릉\n조선의 찬란한 문화와 왕실의 격조 높은 예법을 보여주는 공간입니다.",
+                "title":"세종과 효종, 두 왕이 잠든 조선의 왕릉",
+                "main":"경기도 여주시에 위치한 영녕릉(英寧陵)은 조선 제4대 세종대왕과 소헌왕후, 그리고 제17대 효종대왕과 인선왕후의 능인 영릉(英陵)과 영릉(寧陵)을 함께 부르는 이름입니다.\n세계문화유산 ‘조선왕릉’의 일부로, 조선의 역사와 정신이 고스란히 깃든 왕릉입니다.\n영릉(英陵)은소헌왕후가 먼저 세상을 떠나자 1446년 서울 인릉 자리에 능이 조성되었고, 4년 뒤 세종이 세상을 떠나 합장되었으나, 풍수상 불길하다는 이유로 1469년(예종 1)에 지금의 여주로 옮겨졌습니다.\n영릉(寧陵)은1659년 효종이 세상을 떠난 뒤 처음에는 구리 동구릉에 능을 조성했으나, 능침 석물의 문제와 침수 우려로 1673년(현종 14)에 여주로 옮겨졌습니다.",
+                "last":"고요한 소나무 숲길을 따라 걷다 보면, 조용히 잠든 두 왕의 숨결과 함께\n조선의 시간, 그리고 그 정신이 여전히 이어지고 있음을 느낄 수 있는곳\n영녕릉입니다."
+            },
+            "parking":{
+                "existence":true,
+                "fee":false,
+                "address":"경기 여주시 세종대왕면 영릉로 269-10",
+                "latLng":"37.30553930703007 , 127.6128947550548",
+                "level":5
+            },
+            "operating":{
+                "operatingHour": "09:00 ~ 16:30",
+                "closeDay": "매주 월요일 휴무",
+                "entranceFee": "개인: 500원\n단체(10인 이상): 400원" 
+            },
+            "review":{
+                "existence": false,
+                "link":""
+            },
+            "season":["여름"]
+        },
+        {
+            "id":13,
+            "top":"",
+            "img": {
+                "link":"/images/detailLocation/milkyway/milkyway",
+                "gallery":["5","6","7","8","9","10"],
+                "galleryPc":["4","7","0","00","6"]
+            },
+            "location":{
+                "name":"한탕강 은하수교 횃불전망대",
+                "english":"Hantangang Milky Way Bridge Torch Observatory",
+                "region":["강원","강원 철원군","갈말읍 상사리 산 38-3"],
+                "latLng":"38.2011437137938 , 127.280122640722",
+                "placeID":"898493847",
+                "homepage":"https://www.cwg.go.kr/tour/selectTourCntntsWebView.do?tourNo=428&key=572&ctgry=10",
+                "nearby":""
+            },
+            "description":{
+                "short":"대자연과 인공미의 조화",
+                "slide":"은하수교와 횃불전망대는 한탄강의 절경 속에\n자연과 인간의 조화로움을 담아낸 공간입니다.",
+                "title":"대자연과 인공미가 조화된, 철원의 새로운 상징",
+                "main":"유네스코 세계지질공원으로 등재된 한탄강 유역은 수십만 년의 세월이 빚어낸 현무암 협곡의 청정 자연생태를 간직한 곳입니다.\n이곳 송대소에 조성된 한여울 길을 따라 탐방객들이 자연스럽게 이동할 수 있도록, 은하수교와 횃불전망대가 건설되었습니다.\n은하수교는 연장 180m, 폭 3m의 1주탑 비대칭 현수교 형식으로, 발아래로 펼쳐지는 깊은 협곡과 검푸른 강물이 한눈에 들어오며 마치 별빛 위를 걷는 듯한 느낌을 줍니다.\n횃불전망대는 45m의 높이는 철원이 도내에서 3.1 만세운동이 가장 먼저 일어난 지역임을 기념하며, 전체 높이 53m는 1953년 정전협정의 해를 상징합니다.",
+                "last":"밤이 되면 은하수처럼 반짝이는 조명 아래,\n고요히 흐르는 강과 함께 철원의 이야기가 빛어나는 곳\n한탕강 은하수교 횃불전망대입니다."
+            },
+            "parking":{
+                "existence":true,
+                "fee":false,
+                "address":"강원 철원군 동송읍 장흥리 2583",
+                "latLng":"38.1976056903544 , 127.27728614197422",
+                "level":4
+            },
+            "operating":{
+                "operatingHour": "09:00 ~ 17:00\n매표 마감: 16:00",
+                "closeDay": "매주 화요일 휴무",
+                "entranceFee": "기본(철원상품권교환) 대인: 6,000원(3,000원)\n기본(철원상품권교환) 소인: 3,000(1,000원)\n감면(철원상품권교환) 대인: 4,000원(2,000원)\n감면(철원상품권교환) 소인: 2,000원(1,000원)" 
+            },
+            "review":{
+                "existence": false,
+                "link":""
+            },
+            "season":["사계절"]
+        }
+    ],
 
-const app = express();
-app.use(cors());
+    "seasons":[
+        {
+            "id":"1",
+            "img":"/images/seasons/spring",
+            "textTitle":"봄바람 따라 떠나는 여행",
+            "text":"설레는 봄, 지금 떠나기 좋은 곳들을 만나보세요.",
+            "season":"봄",
+            "textTitleSecond":"따스한 봄"
+        },
+        {
+            "id":"2",
+            "img":"/images/seasons/spring",
+            "textTitle":"꽃길 따라 걷는 시간",
+            "text":"따스한 햇살 아래, 마음까지 피어나는 여행을 즐겨보세요.",
+            "season":"봄",
+            "textTitleSecond":"따스한 봄"
+        },
+        {
+            "id":"3",
+            "img":"/images/seasons/spring",
+            "textTitle":"봄빛에 물든 여행지",
+            "text":"새로운 마음으로 떠나는 여행이 일상에 온기를 더해줍니다.",
+            "season":"봄",
+            "textTitleSecond":"따스한 봄"
+        },
+        {
+            "id":"4",
+            "img":"/images/seasons/spring",
+            "textTitle":"마음이 포근해지는 봄날",
+            "text":"느긋한 하루 속에서 계절이 전하는 여유를 느껴보세요.",
+            "season":"봄",
+            "textTitleSecond":"따스한 봄"
+        },
+        {
+            "id":"5",
+            "img":"/images/seasons/spring",
+            "textTitle":"봄이 부르는 길 위에서",
+            "text":"따뜻한 공기와 함께, 당신만의 봄 여행을 시작해보세요.",
+            "season":"봄",
+            "textTitleSecond":"따스한 봄"
+        },
+        {
+            "id":"6",
+            "img":"/images/seasons/summer",
+            "textTitle":"바다로 떠나는 여름 여행",
+            "text":"뜨거운 태양 아래, 시원한 파도와 함께 여름을 만끽해보세요.",
+            "season":"여름",
+            "textTitleSecond":"무더운 여름"
+        },
+        {
+            "id":"7",
+            "img":"/images/seasons/summer",
+            "textTitle":"햇살이 머무는 시간",
+            "text":"찬란한 빛과 함께 여름의 순간을 마음껏 즐겨보세요.",
+            "season":"여름",
+            "textTitleSecond":"무더운 여름"
+        },
+        {
+            "id":"8",
+            "img":"/images/seasons/summer",
+            "textTitle":"여름밤의 설렘",
+            "text":"별빛 아래에서 느긋하게, 여름이 주는 낭만을 즐겨보세요.",
+            "season":"여름",
+            "textTitleSecond":"무더운 여름"
+        },
+        {
+            "id":"9",
+            "img":"/images/seasons/summer",
+            "textTitle":"뜨거운 여름, 가장 빛나는 순간",
+            "text":"계절의 에너지를 따라 떠나는 여행, 그곳에 여름이 있습니다.",
+            "season":"여름",
+            "textTitleSecond":"무더운 여름"
+        },
+        {
+            "id":"10",
+            "img":"/images/seasons/summer",
+            "textTitle":"여름의 한가운데로",
+            "text":"눈부신 햇살과 짙은 초록이 가득한 계절, 지금이 바로 그때예요.",
+            "season":"여름",
+            "textTitleSecond":"무더운 여름"
+        },
+        {
+            "id":"11",
+            "img":"/images/seasons/fall",
+            "textTitle":"바람에 물드는 계절",
+            "text":"선선한 바람과 함께, 가을의 빛깔을 따라 떠나보세요.",
+            "season":"가을",
+            "textTitleSecond":"사라지는 가을"
+        },
+        {
+            "id":"12",
+            "img":"/images/seasons/fall",
+            "textTitle":"단풍이 부르는 여행",
+            "text":"가을의 색으로 채워진 길 위에서 특별한 하루를 만나보세요.",
+            "season":"가을",
+            "textTitleSecond":"사라지는 가을"
+        },
+        {
+            "id":"13",
+            "img":"/images/seasons/fall",
+            "textTitle":"풍경이 말을 거는 계절",
+            "text":"고요한 길 위에서 계절이 전하는 이야기를 들어보세요.",
+            "season":"가을",
+            "textTitleSecond":"사라지는 가을"
+        },
+        {
+            "id":"14",
+            "img":"/images/seasons/fall",
+            "textTitle":"느리게 걷는 가을 오후",
+            "text":"따뜻한 햇살 아래, 잠시 멈춰 계절의 여유를 즐겨보세요.",
+            "season":"가을",
+            "textTitleSecond":"사라지는 가을"
+        },
+        {
+            "id":"15",
+            "img":"/images/seasons/fall",
+            "textTitle":"빛이 머무는 순간, 가을",
+            "text":"해질녘의 황금빛 속에서 소중한 추억을 만들어보세요.",
+            "season":"가을",
+            "textTitleSecond":"사라지는 가을"
+        },
+        {
+            "id":"16",
+            "img":"/images/seasons/winter",
+            "textTitle":"눈 내리는 겨울길 위에서",
+            "text":"하얗게 물든 세상 속, 고요한 설렘이 시작됩니다.",
+            "season":"겨울",
+            "textTitleSecond":"추운 겨울"
+        },
+        {
+            "id":"17",
+            "img":"/images/seasons/winter",
+            "textTitle":"하얀 계절의 초대",
+            "text":"눈꽃처럼 피어나는 풍경 속으로, 조용한 여행을 떠나보세요.",
+            "season":"겨울",
+            "textTitleSecond":"추운 겨울"
+        },
+        {
+            "id":"18",
+            "img":"/images/seasons/winter",
+            "textTitle":"포근한 불빛 아래에서",
+            "text":"겨울밤의 온기와 함께, 조용한 휴식을 즐겨보세요.",
+            "season":"겨울",
+            "textTitleSecond":"추운 겨울"
+        },
+        {
+            "id":"19",
+            "img":"/images/seasons/winter",
+            "textTitle":"겨울, 다시 설레는 시간",
+            "text":"눈부신 설경과 함께 계절의 특별함을 느껴보세요.",
+            "season":"겨울",
+            "textTitleSecond":"추운 겨울"
+        },
+        {
+            "id":"20",
+            "img":"/images/seasons/winter",
+            "textTitle":"찬 바람이 전하는 이야기",
+            "text":"차분한 산등성이와 고요한 호수, 그 속에 겨울의 깊이가 있습니다.",
+            "season":"겨울",
+            "textTitleSecond":"추운 겨울"
+        }
+    ],
 
-// db.json 불러오기
-const db = JSON.parse(fs.readFileSync("./db.json", "utf-8"));
+    "cafes":[
+        {
+            "id":1,
+            "img": {
+                "link":"/images/detailTheme/cafesan/cafesan",
+                "gallery":["5","6","7","8","9","10"]
+            },
+            "location":{
+                "name":"카페산",
+                "english":"CafeSan",
+                "region":["충청/대전","충북 단양군","가곡면 두산길 196-86 카페산"],
+                "latLng":"36.9946676701953 , 128.394377599647",
+                "placeID":"27502961",
+                "homepage":"https://www.sann.co.kr/",
+                "instagram":"https://www.instagram.com/cafe_sann/",
+                "nearby":""
+            },
+            "description":{
+                "slide":"푸른 산과 강이 어우러진 단양의 절경과 이곳만의 색다른 또 하나의 매력\n멋진 비행과 함께하는 풍경",
+                "title":"하늘과 맞닿은 특별한 휴식",
+                "menu":["필터커피","아메리카노","망고케이크","감자빵"],
+                "price":["6,500", "6,500", "9,500", "4,200"],
+                "menuLink" : "https://place.map.kakao.com/27502961#menuInfo"
+            },
+            "info":{
+                "parking":true,
+                "takeOut":true,
+                "pet":true,
+                "reserve":true
+            },
+            "operating":{
+                "operatingHour": "평일: 09:30 ~ 19:00\n주말: 09:30 ~ 19:30",
+                "closeDay": null,
+                "entranceFee": null,
+                "breakTime":"",
+                "lastOrder":"",
+                "etc":""
+            },
+            "review":{
+                "existence": false,
+                "link":""
+            }
+        },
+        {
+            "id":2,
+            "img": {
+                "link":"/images/detailTheme/gomori/gomori",
+                "gallery":["5","6","7","8","9","10"]
+            },
+            "location":{
+                "name":"고모리 691",
+                "english":"Go Mori 691",
+                "region":["경기/인천","경기 포천시","소흘읍 고모루성길 267 고모리691"],
+                "latLng":"37.7968894349749 , 127.1607167879574",
+                "placeID":"8743858",
+                "homepage":"https://blog.naver.com/gomori691k",
+                "instagram":"",
+                "nearby":""
+            },
+            "description":{
+                "slide":"고모리 저수지 근처 아름다운 풍경을 감상하며 즐기는 브런치와 커피",
+                "title":"아름다운 자연 속에서 여유로운 시간",
+                "menu":["흑임자 크림라떼","아메리카노","누룽지 까르보나라","스페셜브런치"],
+                "price":["9,000", "7,000", "25,000", "26,000"],
+                "menuLink" : "https://place.map.kakao.com/8743858#menuInfo"
+            },
+            "info":{
+                "parking":true,
+                "takeOut":false,
+                "pet":false,
+                "reserve":true
+            },
+            "operating":{
+                "operatingHour": "매일 11:30 ~ 21:00",
+                "closeDay": null,
+                "entranceFee": null,
+                "breakTime":"",
+                "lastOrder":"",
+                "etc":""
+            },
+            "review":{
+                "existence": true,
+                "link":"https://blog.naver.com/tripinsouthkorea/223480598203"
+            }
+        }
+    ],
 
-// ✅ /rankings 라우트
-app.get("/rankings", (req, res) => {
-  res.json(db.rankings);
-});
-
-// ✅ /rankings/:id 상세 라우트
-app.get("/rankings/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  const item = db.rankings.find(r => r.id === id);
-  if (item) res.json(item);
-  else res.status(404).send("Not found");
-});
-
-// ✅ /seasons 라우트 (여기 추가!)
-app.get("/seasons", (req, res) => {
-  res.json(db.seasons);
-});
-
-// ✅ /seasons 라우트 (여기 추가!)
-app.get("/cafes", (req, res) => {
-  res.json(db.cafes);
-});
-
-// ✅ /seasons 라우트 (여기 추가!)
-app.get("/restaurants", (req, res) => {
-  res.json(db.restaurants);
-});
-
-// ✅ /cafes/:id 상세 라우트
-app.get("/cafes/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  const item = db.cafes.find(r => r.id === id);
-  if (item) res.json(item);
-  else res.status(404).send("Not found");
-});
-
-// ✅ /restaurants/:id 상세 라우트
-app.get("/restaurants/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  const item = db.restaurants.find(r => r.id === id);
-  if (item) res.json(item);
-  else res.status(404).send("Not found");
-});
-
-// ✅ 포트 설정
-const PORT = 3000;
-app.listen(PORT, () => console.log(`Server running on http://172.30.1.1:${PORT}`));
+    "restaurants":[
+        {
+            "id":1,
+            "img": {
+                "link":"/images/detailTheme/yeonsalang/yeonsalang",
+                "gallery":["5","6","7","8","9","10"]
+            },
+            "location":{
+                "name":"연사랑",
+                "english":"Yeonsalang",
+                "region":["강원","강원 철원군","갈말읍 갈말로 653-2 연사랑"],
+                "latLng":"38.2036602865279 , 127.285540823884",
+                "placeID":"1214825079",
+                "homepage":"",
+                "instagram":"https://www.instagram.com/yeonl_ove/",
+                "nearby":[13]
+            },
+            "description":{
+                "slide":"철원 오대쌀과 신선한 제철 채소 그리고 파프리카로 만든 고추장으로\n방문객들의 만족도를 높이는 건강한 식당",
+                "title":"건강한 한식을 제공하는 식당",
+                "menu":["철원 밥상","제육 볶음", "돌미나리전", "오대소불고기", "돌미나리수육"],
+                "price":["12,000", "20,000", "10,000", "32,000", "36,000"],
+                "menuLink" : "https://place.map.kakao.com/1214825079#menuInfo"
+            },
+            "info":{
+                "parking":true,
+                "takeOut":true,
+                "pet":false,
+                "reserve":true
+            },
+            "operating":{
+                "operatingHour": "매일 11:00 ~ 20:00",
+                "closeDay": "(매주 화요일 휴무)",
+                "entranceFee": null,
+                "breakTime":"쉬는 시간 15:00 ~ 17:00",
+                "lastOrder":"주문 마감 19:00",
+                "etc":"재료소진 시 조기마감"
+            },
+            "review":{
+                "existence": false,
+                "link":""
+            }
+        }
+    ]
+}
