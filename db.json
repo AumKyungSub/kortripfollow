@@ -340,48 +340,6 @@
             "id":9,
             "top":"",
             "img": {
-                "link":"/images/detailLocation/cafesan/cafesan",
-                "gallery":["5","6","7","8","9","10","11","12"],
-                "galleryPc":["4","10","0","00","6"]
-            },
-            "location":{
-                "name":"카페산",
-                "english":"CafeSan",
-                "region":["충청/대전","충북 단양군","가곡면 두산길 196-86 카페산"],
-                "latLng":"36.9946676701953 , 128.394377599647",
-                "placeID":"27502961",
-                "homepage":"https://www.sann.co.kr/",
-                "nearby":""
-            },
-            "description":{
-                "short":"하늘위 카페",
-                "slide":"푸른 산과 강이 어우러진 단양의 절경과 이곳만의 색다른 또 하나의 매력\n멋진 비행과 함께하는 풍경",
-                "title":"하늘과 맞닿은 특별한 휴식",
-                "main":"충북 단양에 위치한 카페 산은 패러글라이딩 활공장 옆, 해발 600m 고도에 자리한 산악 카페입니다.\n탁 트인 전망과 함께 마치 하늘 위에 앉아 있는 듯한 특별한 분위기를 느끼며 커피 한 잔과 함께 여유롭게 풍경을 즐길 수 있습니다.\n훌륭한 전망을 사진으로 남기고 패러글라이딩하는 모습을 볼 수 있는 명소입니다.",
-                "last":"커피 향과 함께 불어오는 산바람 속에서\n잠시 일상을 내려놓고 여유를 느껴보세요.\n하늘에 가장 가까운 카페, 카페 산입니다."
-            },
-            "parking":{
-                "existence":true,
-                "fee":false,
-                "address":"충북 단양군 가곡면 두산길 196-86 카페산",
-                "latLng":"36.9946676701953 , 128.394377599647",
-                "level":2
-            },
-            "operating":{
-                "operatingHour": "평일: 09:30 ~ 19:00\n주말: 09:30 ~ 19:30",
-                "closeDay": null,
-                "entranceFee": null
-            },
-            "review":{
-                "existence": false,
-                "link":""
-            },
-            "season":["봄","가을","여름"]
-        },
-        {
-            "id":10,
-            "top":"",
-            "img": {
                 "link":"/images/detailLocation/buseoksa/buseoksa",
                 "gallery":["5","6","7","8","9","10","11"],
                 "galleryPc":["4","8","0","3","6"]
@@ -421,7 +379,7 @@
             "season":["여름","가을"]
         },
         {
-            "id":11,
+            "id":10,
             "top":2,
             "img": {
                 "link":"/images/detailLocation/windyhill/windyhill",
@@ -463,7 +421,7 @@
             "season":["가을","겨울"]
         },
         {
-            "id":12,
+            "id":11,
             "top":"",
             "img": {
                 "link":"/images/detailLocation/odongdo/odongdo",
@@ -505,7 +463,7 @@
             "season":["봄","겨울"]
         },
         {
-            "id":13,
+            "id":12,
             "top":"",
             "img": {
                 "link":"/images/detailLocation/sejong/sejong",
@@ -547,7 +505,7 @@
             "season":["여름"]
         },
         {
-            "id":14,
+            "id":13,
             "top":"",
             "img": {
                 "link":"/images/detailLocation/milkyway/milkyway",
@@ -750,6 +708,96 @@
             "text":"차분한 산등성이와 고요한 호수, 그 속에 겨울의 깊이가 있습니다.",
             "season":"겨울",
             "textTitleSecond":"추운 겨울"
+        }
+    ],
+
+    "cafes":[
+        {
+            "id":1,
+            "img": {
+                "link":"/images/detailTheme/cafesan/cafesan",
+                "gallery":["5","6","7","8","9","10"]
+            },
+            "location":{
+                "name":"카페산",
+                "english":"CafeSan",
+                "region":["충청/대전","충북 단양군","가곡면 두산길 196-86 카페산"],
+                "latLng":"36.9946676701953 , 128.394377599647",
+                "placeID":"27502961",
+                "homepage":"https://www.sann.co.kr/",
+                "instagram":"https://www.instagram.com/cafe_sann/",
+                "nearby":""
+            },
+            "description":{
+                "slide":"푸른 산과 강이 어우러진 단양의 절경과 이곳만의 색다른 또 하나의 매력\n멋진 비행과 함께하는 풍경",
+                "title":"하늘과 맞닿은 특별한 휴식",
+                "menu":["필터커피","아메리카노","망고케이크","감자빵"],
+                "price":["6,500", "6,500", "9,500", "4,200"],
+                "menuLink" : "https://place.map.kakao.com/27502961#menuInfo"
+            },
+            "info":{
+                "parking":true,
+                "takeOut":true,
+                "pet":true,
+                "reserve":true
+            },
+            "operating":{
+                "operatingHour": "평일: 09:30 ~ 19:00\n주말: 09:30 ~ 19:30",
+                "closeDay": null,
+                "entranceFee": null,
+                "breakTime":"",
+                "lastOrder":"",
+                "etc":""
+            },
+            "review":{
+                "existence": false,
+                "link":""
+            }
+        }
+    ],
+
+    "restaurants":[
+        {
+            "id":1,
+            "img": {
+                "link":"/images/detailTheme/yeonsalang/yeonsalang",
+                "gallery":["5","6","7","8","9","10"]
+            },
+            "location":{
+                "name":"연사랑",
+                "english":"Yeonsalang",
+                "region":["강원","강원 철원군","갈말읍 갈말로 653-2 연사랑"],
+                "latLng":"38.2036602865279 , 127.285540823884",
+                "placeID":"1214825079",
+                "homepage":"",
+                "instagram":"https://www.instagram.com/yeonl_ove/",
+                "nearby":[13]
+            },
+            "description":{
+                "slide":"철원 오대쌀과 신선한 제철 채소 그리고 파프리카로 만든 고추장으로\n방문객들의 만족도를 높이는 건강한 식당",
+                "title":"건강한 한식을 제공하는 식당",
+                "menu":["철원 밥상","제육 볶음", "돌미나리전", "오대소불고기", "돌미나리수육"],
+                "price":["12,000", "20,000", "10,000", "32,000", "36,000"],
+                "menuLink" : "https://place.map.kakao.com/1214825079#menuInfo"
+            },
+            "info":{
+                "parking":true,
+                "takeOut":true,
+                "pet":false,
+                "reserve":true
+            },
+            "operating":{
+                "operatingHour": "매일 11:00 ~ 20:00",
+                "closeDay": "(매주 화요일 휴무)",
+                "entranceFee": null,
+                "breakTime":"쉬는 시간 15:00 ~ 17:00",
+                "lastOrder":"주문 마감 19:00",
+                "etc":"재료소진 시 조기마감"
+            },
+            "review":{
+                "existence": false,
+                "link":""
+            }
         }
     ]
 }
