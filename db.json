@@ -726,6 +726,7 @@
                 "placeID":"27502961",
                 "homepage":"https://www.sann.co.kr/",
                 "instagram":"https://www.instagram.com/cafe_sann/",
+                "chain":"",
                 "nearby":""
             },
             "description":{
@@ -768,6 +769,7 @@
                 "placeID":"8743858",
                 "homepage":"https://blog.naver.com/gomori691k",
                 "instagram":"",
+                "chain":"",
                 "nearby":""
             },
             "description":{
@@ -813,6 +815,7 @@
                 "placeID":"1214825079",
                 "homepage":"",
                 "instagram":"https://www.instagram.com/yeonl_ove/",
+                "chain":"",
                 "nearby":[13]
             },
             "description":{
@@ -839,6 +842,49 @@
             "review":{
                 "existence": false,
                 "link":""
+            }
+        },
+        {
+            "id":2,
+            "img": {
+                "link":"/images/detailTheme/obune/obune",
+                "gallery":["5","6","7","8","9","10"]
+            },
+            "location":{
+                "name":"어부네코다리조림",
+                "english":"Eobune Braised Cod",
+                "region":["경기/인천","경기 양주시","만송로 251 1, 2동 1층"],
+                "latLng":"37.784821719444 , 127.086856524501",
+                "placeID":"1971400355",
+                "homepage":"http://코다리.kr/",
+                "instagram":"",
+                "chain":"양주레이크우드점",
+                "nearby":""
+            },
+            "description":{
+                "slide":"정갈한 코다리와 푸짐한 밑반찬의 조화",
+                "title":"정갈한 코다리 한상",
+                "menu":["코다리 조림 (1인)","쭈꾸미 볶음 (1인)", "해물 쭈꾸미 볶음 (1인)", "*공기밥 별도*"],
+                "price":["15,000", "15,000", "18,000"],
+                "menuLink" : "https://place.map.kakao.com/1971400355#menuInfo"
+            },
+            "info":{
+                "parking":true,
+                "takeOut":true,
+                "pet":false,
+                "reserve":false
+            },
+            "operating":{
+                "operatingHour": "매일 10:30 ~ 21:00",
+                "closeDay": " ",
+                "entranceFee": null,
+                "breakTime":"쉬는 시간 15:30 ~ 16:30",
+                "lastOrder":"주문 마감 20:20",
+                "etc":""
+            },
+            "review":{
+                "existence": true,
+                "link":"https://blog.naver.com/PostView.naver?blogId=tripinsouthkorea&logNo=224079268488&categoryNo=41&parentCategoryNo=0&viewDate=&currentPage=1&postListTopCurrentPage=&from=postList&userTopListOpen=true&userTopListCount=5&userTopListManageOpen=false&userTopListCurrentPage=1"
             }
         }
     ]
