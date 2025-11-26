@@ -797,6 +797,49 @@
                 "existence": true,
                 "link":"https://blog.naver.com/tripinsouthkorea/223480598203"
             }
+        },
+        {
+            "id":3,
+            "img": {
+                "link":"/images/detailTheme/cafemur/cafemur",
+                "gallery":["5","6","7","8","9","10"]
+            },
+            "location":{
+                "name":"카페무르",
+                "english":"Cafe Mur",
+                "region":["경기/인천","경기 양평군","강하면 강남로 379 1층 카페무르"],
+                "latLng":"37.5041310966021, 127.426759947181",
+                "placeID":"550188195",
+                "homepage":"https://smartstore.naver.com/cafemur",
+                "instagram":"https://www.instagram.com/cafe.mur",
+                "chain":"",
+                "nearby":""
+            },
+            "description":{
+                "slide":"남한강 바로 앞 넓은 공간에서 즐기는 커피 한잔",
+                "title":"아늑한 공간 속 드넓은 남한강",
+                "menu":["무르 크림라떼","아메리카노","프렌치토스트 브런치","호밀빵브런치"],
+                "price":["7,800", "6,500", "18,000", "18,000"],
+                "menuLink" : "https://place.map.kakao.com/550188195#menuInfo"
+            },
+            "info":{
+                "parking":true,
+                "takeOut":true,
+                "pet":true,
+                "reserve":false
+            },
+            "operating":{
+                "operatingHour": "매일 11:00 ~ 20:00",
+                "closeDay": null,
+                "entranceFee": null,
+                "breakTime":"",
+                "lastOrder":"",
+                "etc":""
+            },
+            "review":{
+                "existence": false,
+                "link":""
+            }
         }
     ],
 
