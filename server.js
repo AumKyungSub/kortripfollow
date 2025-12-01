@@ -1,57 +1,68 @@
 import express from "express";
 import cors from "cors";
-import fs from "fs";
+import mongoose from "mongoose";
+
+import dotenv from "dotenv";
+dotenv.config();
 
 const app = express();
 app.use(cors());
 
-// db.json 불러오기
-const db = JSON.parse(fs.readFileSync("./db.json", "utf-8"));
+// ----- MongoDB 연결 -----
+const uri = process.env.MONGO_URI;
+await mongoose.connect(uri);
+console.log("✅ MongoDB Connected");
 
-// ✅ /rankings 라우트
-app.get("/rankings", (req, res) => {
-  res.json(db.rankings);
+// ----- 스키마 모델 선언 (strict:false로 어떤 구조든 허용) -----
+const options = { strict: false, id: false };
+
+const Ranking = mongoose.model("Ranking", new mongoose.Schema({}, { ...options, collection: "rankings" }));
+const Season = mongoose.model("Season", new mongoose.Schema({}, { ...options, collection: "seasons" }));
+const Cafe = mongoose.model("Cafe", new mongoose.Schema({}, { ...options, collection: "cafes" }));
+const Restaurant = mongoose.model("Restaurant", new mongoose.Schema({}, { ...options, collection: "restaurants" }));
+
+// ----- API 라우트 -----
+
+// 전체 목록 조회
+app.get("/rankings", async (req, res) => {
+  const data = await Ranking.find({});
+  res.json(data);
 });
 
-// ✅ /rankings/:id 상세 라우트
-app.get("/rankings/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  const item = db.rankings.find(r => r.id === id);
-  if (item) res.json(item);
-  else res.status(404).send("Not found");
+app.get("/seasons", async (req, res) => {
+  const data = await Season.find({});
+  res.json(data);
 });
 
-// ✅ /seasons 라우트 (여기 추가!)
-app.get("/seasons", (req, res) => {
-  res.json(db.seasons);
+app.get("/cafes", async (req, res) => {
+  const data = await Cafe.find({});
+  res.json(data);
 });
 
-// ✅ /seasons 라우트 (여기 추가!)
-app.get("/cafes", (req, res) => {
-  res.json(db.cafes);
+app.get("/restaurants", async (req, res) => {
+  const data = await Restaurant.find({});
+  res.json(data);
 });
 
-// ✅ /seasons 라우트 (여기 추가!)
-app.get("/restaurants", (req, res) => {
-  res.json(db.restaurants);
+// 상세 조회 (id 기준)
+app.get("/rankings/:id", async (req, res) => {
+  const data = await Ranking.findOne({ id: Number(req.params.id) });
+  if (data) res.json(data);
+  else res.status(404).send("Not Found");
 });
 
-// ✅ /cafes/:id 상세 라우트
-app.get("/cafes/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  const item = db.cafes.find(r => r.id === id);
-  if (item) res.json(item);
-  else res.status(404).send("Not found");
+app.get("/cafes/:id", async (req, res) => {
+  const data = await Cafe.findOne({ id: Number(req.params.id) });
+  if (data) res.json(data);
+  else res.status(404).send("Not Found");
 });
 
-// ✅ /restaurants/:id 상세 라우트
-app.get("/restaurants/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  const item = db.restaurants.find(r => r.id === id);
-  if (item) res.json(item);
-  else res.status(404).send("Not found");
+app.get("/restaurants/:id", async (req, res) => {
+  const data = await Restaurant.findOne({ id: Number(req.params.id) });
+  if (data) res.json(data);
+  else res.status(404).send("Not Found");
 });
 
-// ✅ 포트 설정
+// ----- 서버 실행 -----
 const PORT = 3000;
-app.listen(PORT, () => console.log(`Server running on http://172.30.1.1:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
