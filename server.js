@@ -6,12 +6,30 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+// CORS 설정 
+app.use(cors({
+  origin: [
+    "https://kortripfollow.shop",
+    "https://www.kortripfollow.shop",
+    "https://m.kortripfollow.shop",
+    "https://iridescent-semolina-29f8f8.netlify.app",
+    "http://localhost:5173",
+    "http://172.30.1.1:5173/"
+  ],
+  credentials: true
+}));
 
 // ----- MongoDB 연결 -----
 const uri = process.env.MONGO_URI;
-await mongoose.connect(uri);
-console.log("✅ MongoDB Connected");
+if (!uri) {
+  console.error("MONGO_URI not found in environment variables");
+  process.exit(1);
+}
+
+await mongoose.connect(uri)
+  .then(() => console.log("MongoDB Connected"))
+  .catch(err => console.error(err));
 
 // ----- 스키마 모델 선언 (strict:false로 어떤 구조든 허용) -----
 const options = { strict: false, id: false };
@@ -64,5 +82,5 @@ app.get("/restaurants/:id", async (req, res) => {
 });
 
 // ----- 서버 실행 -----
-const PORT = 3000;
-app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
