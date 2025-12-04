@@ -38,6 +38,8 @@ const Ranking = mongoose.model("Ranking", new mongoose.Schema({}, { ...options, 
 const Season = mongoose.model("Season", new mongoose.Schema({}, { ...options, collection: "seasons" }));
 const Cafe = mongoose.model("Cafe", new mongoose.Schema({}, { ...options, collection: "cafes" }));
 const Restaurant = mongoose.model("Restaurant", new mongoose.Schema({}, { ...options, collection: "restaurants" }));
+const Lodgings = mongoose.model("Lodgings", new mongoose.Schema({}, { ...options, collection: "lodgings" }));
+const Foods = mongoose.model("Foods", new mongoose.Schema({}, { ...options, collection: "foods" }));
 
 // ----- API 라우트 -----
 
@@ -62,6 +64,16 @@ app.get("/restaurants", async (req, res) => {
   res.json(data);
 });
 
+app.get("/lodgings", async (req, res) => {
+  const data = await Lodgings.find({});
+  res.json(data);
+});
+
+app.get("/foods", async (req, res) => {
+  const data = await Foods.find({});
+  res.json(data);
+});
+
 // 상세 조회 (id 기준)
 app.get("/rankings/:id", async (req, res) => {
   const data = await Ranking.findOne({ id: Number(req.params.id) });
@@ -77,6 +89,18 @@ app.get("/cafes/:id", async (req, res) => {
 
 app.get("/restaurants/:id", async (req, res) => {
   const data = await Restaurant.findOne({ id: Number(req.params.id) });
+  if (data) res.json(data);
+  else res.status(404).send("Not Found");
+});
+
+app.get("/lodgings/:id", async (req, res) => {
+  const data = await Lodgings.findOne({ id: Number(req.params.id) });
+  if (data) res.json(data);
+  else res.status(404).send("Not Found");
+});
+
+app.get("/foods/:id", async (req, res) => {
+  const data = await Foods.findOne({ id: Number(req.params.id) });
   if (data) res.json(data);
   else res.status(404).send("Not Found");
 });
