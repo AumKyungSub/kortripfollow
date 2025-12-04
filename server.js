@@ -15,7 +15,7 @@ app.use(cors({
     "https://m.kortripfollow.shop",
     "https://iridescent-semolina-29f8f8.netlify.app",
     "http://localhost:5173",
-    "http://172.30.1.1:5173/"
+    "http://172.30.1.1:5173"
   ],
   credentials: true
 }));
