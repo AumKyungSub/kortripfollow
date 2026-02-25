@@ -40,7 +40,7 @@ const Cafe = mongoose.model("Cafe", new mongoose.Schema({}, { ...options, collec
 const Restaurant = mongoose.model("Restaurant", new mongoose.Schema({}, { ...options, collection: "restaurants" }));
 const Lodgings = mongoose.model("Lodgings", new mongoose.Schema({}, { ...options, collection: "lodgings" }));
 const Foods = mongoose.model("Foods", new mongoose.Schema({}, { ...options, collection: "foods" }));
-
+const Collection = mongoose.model("Collection", new mongoose.Schema({}, { ...options, collection: "collections" }));
 // ----- API 라우트 -----
 
 // 전체 목록 조회
@@ -103,6 +103,31 @@ app.get("/foods/:id", async (req, res) => {
   const data = await Foods.findOne({ id: Number(req.params.id) });
   if (data) res.json(data);
   else res.status(404).send("Not Found");
+});
+
+app.get("/collections", async (req, res) => {
+  try {
+    const data = await Collection.find({});
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server Error");
+  }
+});
+
+app.get("/collections/:id", async (req, res) => {
+  try {
+    const data = await Collection.findOne({
+      id: Number(req.params.id)
+    });
+
+    if (!data) return res.status(404).send("Not Found");
+
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server Error");
+  }
 });
 
 // ----- 서버 실행 -----
