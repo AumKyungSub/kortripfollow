@@ -41,9 +41,15 @@ const Restaurant = mongoose.model("Restaurant", new mongoose.Schema({}, { ...opt
 const Lodgings = mongoose.model("Lodgings", new mongoose.Schema({}, { ...options, collection: "lodgings" }));
 const Foods = mongoose.model("Foods", new mongoose.Schema({}, { ...options, collection: "foods" }));
 const Collection = mongoose.model("Collection", new mongoose.Schema({}, { ...options, collection: "collections" }));
+const Blogs = mongoose.model("Blogs", new mongoose.Schema({}, { ...options, collection: "blogs" }));
 // ----- API 라우트 -----
 
 // 전체 목록 조회
+app.get("/blogs", async (req, res) => {
+  const data = await Blogs.find({});
+  res.json(data);
+});
+
 app.get("/rankings", async (req, res) => {
   const data = await Ranking.find({});
   res.json(data);
@@ -75,6 +81,12 @@ app.get("/foods", async (req, res) => {
 });
 
 // 상세 조회 (id 기준)
+app.get("/blogs/:id", async (req, res) => {
+  const data = await Blogs.findOne({ id: Number(req.params.id) });
+  if (data) res.json(data);
+  else res.status(404).send("Not Found");
+});
+
 app.get("/rankings/:id", async (req, res) => {
   const data = await Ranking.findOne({ id: Number(req.params.id) });
   if (data) res.json(data);
