@@ -378,6 +378,47 @@ app.post("/auth/logout", async (req, res, next) => {
   }
 });
 
+app.delete("/auth/account", async (req, res, next) => {
+  try {
+    if (USE_LOCAL_DB) {
+      return res.status(503).json({ error: "Account deletion is unavailable in local mode" });
+    }
+
+    const token = parseCookies(req.headers.cookie)[SESSION_COOKIE_NAME];
+    if (!token) return res.status(401).json({ error: "Authentication required" });
+
+    const session = await Session.findOne({
+      tokenHash: hashSessionToken(token),
+      expiresAt: { $gt: new Date() }
+    }).select("userId").lean();
+
+    if (!session) {
+      res.clearCookie(SESSION_COOKIE_NAME, {
+        httpOnly: true,
+        secure: !USE_LOCAL_DB,
+        sameSite: "lax",
+        path: "/"
+      });
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    await Promise.all([
+      User.deleteOne({ _id: session.userId }),
+      Session.deleteMany({ userId: session.userId })
+    ]);
+
+    res.clearCookie(SESSION_COOKIE_NAME, {
+      httpOnly: true,
+      secure: !USE_LOCAL_DB,
+      sameSite: "lax",
+      path: "/"
+    });
+    return res.status(204).end();
+  } catch (error) {
+    return next(error);
+  }
+});
+
 app.get("/blogs", async (req, res) => {
   const query = {};
   if (req.query.typeTable) query.typeTable = req.query.typeTable;
