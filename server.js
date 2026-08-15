@@ -53,8 +53,21 @@ if (USE_LOCAL_DB) {
   console.log("🔥 Using Local DB JSON!");
 }
 
-// ----- Schema (strict:false) -----
-const Ranking = mongoose.model("Ranking", new mongoose.Schema({}, { strict: false, collection: "rankings" }));
+// ----- Content schemas (strict:false) -----
+function createContentModel(name, collection) {
+  return mongoose.model(
+    name,
+    new mongoose.Schema({}, { strict: false, collection })
+  );
+}
+
+const Blog = createContentModel("Blog", "blogs");
+const Ranking = createContentModel("Ranking", "rankings");
+const Season = createContentModel("Season", "seasons");
+const Cafe = createContentModel("Cafe", "cafes");
+const Restaurant = createContentModel("Restaurant", "restaurants");
+const Lodging = createContentModel("Lodging", "lodgings");
+const Food = createContentModel("Food", "foods");
 
 // ----- Authentication schemas -----
 // Social providers are the source of identity. Passwords are never stored.
@@ -192,10 +205,25 @@ app.post("/auth/logout", async (req, res, next) => {
 });
 
 app.get("/blogs", async (req, res) => {
-  if (USE_LOCAL_DB) {
-    return res.json(localDB.blogs);
+  const query = {};
+  if (req.query.typeTable) query.typeTable = req.query.typeTable;
+  if (req.query.otherID !== undefined) {
+    const otherID = Number(req.query.otherID);
+    if (!Number.isInteger(otherID)) {
+      return res.status(400).json({ error: "Invalid otherID" });
+    }
+    query.otherID = otherID;
   }
-  const data = await Ranking.find({});
+
+  if (USE_LOCAL_DB) {
+    const data = localDB.blogs.filter(item => (
+      (!query.typeTable || item.typeTable === query.typeTable) &&
+      (query.otherID === undefined || item.otherID === query.otherID)
+    ));
+    return res.json(data);
+  }
+
+  const data = await Blog.find(query);
   res.json(data);
 });
 
@@ -204,7 +232,7 @@ app.get("/blogs/:id", async (req, res) => {
     const data = localDB.blogs.find(item => item.id === Number(req.params.id));
     return data ? res.json(data) : res.status(404).send("Not Found");
   }
-  const data = await Ranking.findOne({ id: Number(req.params.id) });
+  const data = await Blog.findOne({ id: Number(req.params.id) });
   data ? res.json(data) : res.status(404).send("Not Found");
 });
 
@@ -230,7 +258,7 @@ app.get("/seasons", async (req, res) => {
   if (USE_LOCAL_DB) {
     return res.json(localDB.seasons);
   }
-  const data = await Ranking.find({});
+  const data = await Season.find({});
   res.json(data);
 });
 
@@ -239,7 +267,7 @@ app.get("/cafes", async (req, res) => {
   if (USE_LOCAL_DB) {
     return res.json(localDB.cafes);
   }
-  const data = await Ranking.find({});
+  const data = await Cafe.find({});
   res.json(data);
 });
 
@@ -248,7 +276,7 @@ app.get("/cafes/:id", async (req, res) => {
     const data = localDB.cafes.find(item => item.id === Number(req.params.id));
     return data ? res.json(data) : res.status(404).send("Not Found");
   }
-  const data = await Ranking.findOne({ id: Number(req.params.id) });
+  const data = await Cafe.findOne({ id: Number(req.params.id) });
   data ? res.json(data) : res.status(404).send("Not Found");
 });
 
@@ -257,7 +285,7 @@ app.get("/restaurants", async (req, res) => {
   if (USE_LOCAL_DB) {
     return res.json(localDB.restaurants);
   }
-  const data = await Ranking.find({});
+  const data = await Restaurant.find({});
   res.json(data);
 });
 
@@ -266,7 +294,7 @@ app.get("/restaurants/:id", async (req, res) => {
     const data = localDB.restaurants.find(item => item.id === Number(req.params.id));
     return data ? res.json(data) : res.status(404).send("Not Found");
   }
-  const data = await Ranking.findOne({ id: Number(req.params.id) });
+  const data = await Restaurant.findOne({ id: Number(req.params.id) });
   data ? res.json(data) : res.status(404).send("Not Found");
 });
 
@@ -275,7 +303,7 @@ app.get("/lodgings", async (req, res) => {
   if (USE_LOCAL_DB) {
     return res.json(localDB.lodgings);
   }
-  const data = await Ranking.find({});
+  const data = await Lodging.find({});
   res.json(data);
 });
 
@@ -284,7 +312,7 @@ app.get("/lodgings/:id", async (req, res) => {
     const data = localDB.lodgings.find(item => item.id === Number(req.params.id));
     return data ? res.json(data) : res.status(404).send("Not Found");
   }
-  const data = await Ranking.findOne({ id: Number(req.params.id) });
+  const data = await Lodging.findOne({ id: Number(req.params.id) });
   data ? res.json(data) : res.status(404).send("Not Found");
 });
 
@@ -292,7 +320,7 @@ app.get("/foods", async (req, res) => {
   if (USE_LOCAL_DB) {
     return res.json(localDB.foods);
   }
-  const data = await Ranking.find({});
+  const data = await Food.find({});
   res.json(data);
 });
 
@@ -301,7 +329,7 @@ app.get("/foods/:id", async (req, res) => {
     const data = localDB.foods.find(item => item.id === Number(req.params.id));
     return data ? res.json(data) : res.status(404).send("Not Found");
   }
-  const data = await Ranking.findOne({ id: Number(req.params.id) });
+  const data = await Food.findOne({ id: Number(req.params.id) });
   data ? res.json(data) : res.status(404).send("Not Found");
 });
 
