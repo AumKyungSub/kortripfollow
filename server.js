@@ -118,6 +118,12 @@ if (!USE_LOCAL_DB) {
 
 const SESSION_COOKIE_NAME = "kortrip_session";
 const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 14;
+const OAUTH_COOKIE_MAX_AGE_MS = 1000 * 60 * 10;
+const GOOGLE_STATE_COOKIE = "kortrip_google_state";
+const GOOGLE_VERIFIER_COOKIE = "kortrip_google_verifier";
+const GOOGLE_REDIRECT_URI = "https://api.kortripfollow.shop/auth/google/callback";
+const FRONTEND_URL = (process.env.FRONTEND_URL || "https://kortripfollow.shop")
+  .replace(/\/$/, "");
 
 function parseCookies(cookieHeader = "") {
   return Object.fromEntries(
@@ -135,6 +141,22 @@ function hashSessionToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
+function randomBase64Url(bytes = 32) {
+  return crypto.randomBytes(bytes).toString("base64url");
+}
+
+function sha256Base64Url(value) {
+  return crypto.createHash("sha256").update(value).digest("base64url");
+}
+
+function safeEqual(left, right) {
+  if (typeof left !== "string" || typeof right !== "string") return false;
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+  return leftBuffer.length === rightBuffer.length &&
+    crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
 function sessionCookieOptions() {
   return {
     httpOnly: true,
@@ -143,6 +165,78 @@ function sessionCookieOptions() {
     path: "/",
     maxAge: SESSION_MAX_AGE_MS
   };
+}
+
+function oauthCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: !USE_LOCAL_DB,
+    sameSite: "lax",
+    path: "/auth/google",
+    maxAge: OAUTH_COOKIE_MAX_AGE_MS
+  };
+}
+
+function clearGoogleOAuthCookies(res) {
+  const options = {
+    httpOnly: true,
+    secure: !USE_LOCAL_DB,
+    sameSite: "lax",
+    path: "/auth/google"
+  };
+  res.clearCookie(GOOGLE_STATE_COOKIE, options);
+  res.clearCookie(GOOGLE_VERIFIER_COOKIE, options);
+}
+
+async function createSession(userId) {
+  const token = randomBase64Url(32);
+  await Session.create({
+    userId,
+    tokenHash: hashSessionToken(token),
+    expiresAt: new Date(Date.now() + SESSION_MAX_AGE_MS)
+  });
+  return token;
+}
+
+async function findOrCreateGoogleUser(profile) {
+  const accountQuery = {
+    accounts: {
+      $elemMatch: { provider: "google", providerUserId: profile.sub }
+    }
+  };
+  const now = new Date();
+  const displayName = typeof profile.name === "string"
+    ? profile.name.trim().slice(0, 80) || null
+    : null;
+
+  let user = await User.findOneAndUpdate(
+    accountQuery,
+    { $set: { displayName, updatedAt: now, lastLoginAt: now } },
+    { new: true, runValidators: true }
+  );
+  if (user) return user;
+
+  try {
+    return await User.create({
+      accounts: [{
+        provider: "google",
+        providerUserId: profile.sub,
+        email: null
+      }],
+      displayName,
+      lastLoginAt: now
+    });
+  } catch (error) {
+    // A simultaneous first login can race with the unique social-account index.
+    if (error?.code !== 11000) throw error;
+    user = await User.findOneAndUpdate(
+      accountQuery,
+      { $set: { displayName, updatedAt: now, lastLoginAt: now } },
+      { new: true, runValidators: true }
+    );
+    if (!user) throw error;
+    return user;
+  }
 }
 
 async function getSessionUser(req) {
@@ -166,6 +260,85 @@ async function getSessionUser(req) {
 
 app.get("/health", (req, res) => {
   res.json({ ok: true });
+});
+
+app.get("/auth/google", (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  if (!clientId || !process.env.GOOGLE_CLIENT_SECRET) {
+    return res.status(503).json({ error: "Google login is not configured" });
+  }
+
+  const state = randomBase64Url(24);
+  const codeVerifier = randomBase64Url(48);
+  res.cookie(GOOGLE_STATE_COOKIE, state, oauthCookieOptions());
+  res.cookie(GOOGLE_VERIFIER_COOKIE, codeVerifier, oauthCookieOptions());
+
+  const authorizationUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+  authorizationUrl.search = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: GOOGLE_REDIRECT_URI,
+    response_type: "code",
+    scope: "openid profile",
+    state,
+    code_challenge: sha256Base64Url(codeVerifier),
+    code_challenge_method: "S256",
+    prompt: "select_account"
+  }).toString();
+
+  return res.redirect(authorizationUrl.toString());
+});
+
+app.get("/auth/google/callback", async (req, res, next) => {
+  const cookies = parseCookies(req.headers.cookie);
+  const state = typeof req.query.state === "string" ? req.query.state : "";
+  const code = typeof req.query.code === "string" ? req.query.code : "";
+  const storedState = cookies[GOOGLE_STATE_COOKIE];
+  const codeVerifier = cookies[GOOGLE_VERIFIER_COOKIE];
+
+  clearGoogleOAuthCookies(res);
+
+  if (req.query.error || !code || !codeVerifier || !safeEqual(state, storedState)) {
+    return res.redirect(`${FRONTEND_URL}/?login=google_failed`);
+  }
+
+  try {
+    const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        code,
+        code_verifier: codeVerifier,
+        grant_type: "authorization_code",
+        redirect_uri: GOOGLE_REDIRECT_URI
+      })
+    });
+    if (!tokenResponse.ok) throw new Error(`Google token exchange failed: ${tokenResponse.status}`);
+
+    const tokens = await tokenResponse.json();
+    if (typeof tokens.access_token !== "string") {
+      throw new Error("Google access token missing");
+    }
+
+    const profileResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
+      headers: { Authorization: `Bearer ${tokens.access_token}` }
+    });
+    if (!profileResponse.ok) throw new Error(`Google userinfo failed: ${profileResponse.status}`);
+
+    const profile = await profileResponse.json();
+    if (typeof profile.sub !== "string" || !profile.sub) {
+      throw new Error("Google subject missing");
+    }
+
+    const user = await findOrCreateGoogleUser(profile);
+    const sessionToken = await createSession(user._id);
+    res.cookie(SESSION_COOKIE_NAME, sessionToken, sessionCookieOptions());
+    return res.redirect(`${FRONTEND_URL}/?login=google_success`);
+  } catch (error) {
+    console.error("Google OAuth callback failed", error);
+    return res.redirect(`${FRONTEND_URL}/?login=google_failed`);
+  }
 });
 
 app.get("/auth/session", async (req, res, next) => {
