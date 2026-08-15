@@ -68,6 +68,7 @@ const Cafe = createContentModel("Cafe", "cafes");
 const Restaurant = createContentModel("Restaurant", "restaurants");
 const Lodging = createContentModel("Lodging", "lodgings");
 const Food = createContentModel("Food", "foods");
+const Collection = createContentModel("Collection", "collections");
 
 // ----- Authentication schemas -----
 // Social providers are the source of identity. Passwords are never stored.
@@ -338,7 +339,7 @@ app.get("/collections", async (req, res) => {
   if (USE_LOCAL_DB) {
     return res.json(localDB.collections);
   }
-  const data = await Ranking.find({ type: "collection" });
+  const data = await Collection.find({});
   res.json(data);
 });
 
@@ -350,10 +351,7 @@ app.get("/collections/:id", async (req, res) => {
     return data ? res.json(data) : res.status(404).send("Not Found");
   }
 
-  const data = await Ranking.findOne({
-    id: Number(req.params.id),
-    type: "collection"
-  });
+  const data = await Collection.findOne({ id: Number(req.params.id) });
 
   data ? res.json(data) : res.status(404).send("Not Found");
 });
