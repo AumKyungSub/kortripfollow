@@ -122,6 +122,8 @@ const OAUTH_COOKIE_MAX_AGE_MS = 1000 * 60 * 10;
 const GOOGLE_STATE_COOKIE = "kortrip_google_state";
 const GOOGLE_VERIFIER_COOKIE = "kortrip_google_verifier";
 const GOOGLE_REDIRECT_URI = "https://api.kortripfollow.shop/auth/google/callback";
+const NAVER_STATE_COOKIE = "kortrip_naver_state";
+const NAVER_REDIRECT_URI = "https://api.kortripfollow.shop/auth/naver/callback";
 const FRONTEND_URL = (process.env.FRONTEND_URL || "https://kortripfollow.shop")
   .replace(/\/$/, "");
 
@@ -167,14 +169,23 @@ function sessionCookieOptions() {
   };
 }
 
-function oauthCookieOptions() {
+function oauthCookieOptions(path = "/auth/google") {
   return {
     httpOnly: true,
     secure: !USE_LOCAL_DB,
     sameSite: "lax",
-    path: "/auth/google",
+    path,
     maxAge: OAUTH_COOKIE_MAX_AGE_MS
   };
+}
+
+function clearNaverOAuthCookie(res) {
+  res.clearCookie(NAVER_STATE_COOKIE, {
+    httpOnly: true,
+    secure: !USE_LOCAL_DB,
+    sameSite: "lax",
+    path: "/auth/naver"
+  });
 }
 
 function clearGoogleOAuthCookies(res) {
@@ -228,6 +239,45 @@ async function findOrCreateGoogleUser(profile) {
     });
   } catch (error) {
     // A simultaneous first login can race with the unique social-account index.
+    if (error?.code !== 11000) throw error;
+    user = await User.findOneAndUpdate(
+      accountQuery,
+      { $set: { displayName, updatedAt: now, lastLoginAt: now } },
+      { new: true, runValidators: true }
+    );
+    if (!user) throw error;
+    return user;
+  }
+}
+
+async function findOrCreateNaverUser(profile) {
+  const providerUserId = typeof profile.id === "string" ? profile.id : "";
+  if (!providerUserId) throw new Error("Naver user ID missing");
+
+  const accountQuery = {
+    accounts: {
+      $elemMatch: { provider: "naver", providerUserId }
+    }
+  };
+  const now = new Date();
+  const displayName = typeof profile.nickname === "string"
+    ? profile.nickname.trim().slice(0, 80) || null
+    : null;
+
+  let user = await User.findOneAndUpdate(
+    accountQuery,
+    { $set: { displayName, updatedAt: now, lastLoginAt: now } },
+    { new: true, runValidators: true }
+  );
+  if (user) return user;
+
+  try {
+    return await User.create({
+      accounts: [{ provider: "naver", providerUserId, email: null }],
+      displayName,
+      lastLoginAt: now
+    });
+  } catch (error) {
     if (error?.code !== 11000) throw error;
     user = await User.findOneAndUpdate(
       accountQuery,
@@ -338,6 +388,75 @@ app.get("/auth/google/callback", async (req, res, next) => {
   } catch (error) {
     console.error("Google OAuth callback failed", error);
     return res.redirect(`${FRONTEND_URL}/?login=google_failed`);
+  }
+});
+
+app.get("/auth/naver", (req, res) => {
+  const clientId = process.env.NAVER_CLIENT_ID;
+  if (!clientId || !process.env.NAVER_CLIENT_SECRET) {
+    return res.status(503).json({ error: "Naver login is not configured" });
+  }
+
+  const state = randomBase64Url(24);
+  res.cookie(NAVER_STATE_COOKIE, state, oauthCookieOptions("/auth/naver"));
+
+  const authorizationUrl = new URL("https://nid.naver.com/oauth2.0/authorize");
+  authorizationUrl.search = new URLSearchParams({
+    response_type: "code",
+    client_id: clientId,
+    redirect_uri: NAVER_REDIRECT_URI,
+    state
+  }).toString();
+
+  return res.redirect(authorizationUrl.toString());
+});
+
+app.get("/auth/naver/callback", async (req, res) => {
+  const cookies = parseCookies(req.headers.cookie);
+  const state = typeof req.query.state === "string" ? req.query.state : "";
+  const code = typeof req.query.code === "string" ? req.query.code : "";
+  const storedState = cookies[NAVER_STATE_COOKIE];
+
+  clearNaverOAuthCookie(res);
+
+  if (req.query.error || !code || !safeEqual(state, storedState)) {
+    return res.redirect(`${FRONTEND_URL}/?login=naver_failed`);
+  }
+
+  try {
+    const tokenUrl = new URL("https://nid.naver.com/oauth2.0/token");
+    tokenUrl.search = new URLSearchParams({
+      grant_type: "authorization_code",
+      client_id: process.env.NAVER_CLIENT_ID,
+      client_secret: process.env.NAVER_CLIENT_SECRET,
+      code,
+      state
+    }).toString();
+
+    const tokenResponse = await fetch(tokenUrl);
+    if (!tokenResponse.ok) throw new Error(`Naver token exchange failed: ${tokenResponse.status}`);
+    const tokens = await tokenResponse.json();
+    if (typeof tokens.access_token !== "string") {
+      throw new Error(`Naver access token missing: ${tokens.error || "unknown error"}`);
+    }
+
+    const profileResponse = await fetch("https://openapi.naver.com/v1/nid/me", {
+      headers: { Authorization: `Bearer ${tokens.access_token}` }
+    });
+    if (!profileResponse.ok) throw new Error(`Naver profile failed: ${profileResponse.status}`);
+
+    const profileResult = await profileResponse.json();
+    if (profileResult.resultcode !== "00" || !profileResult.response) {
+      throw new Error(`Naver profile invalid: ${profileResult.message || "unknown error"}`);
+    }
+
+    const user = await findOrCreateNaverUser(profileResult.response);
+    const sessionToken = await createSession(user._id);
+    res.cookie(SESSION_COOKIE_NAME, sessionToken, sessionCookieOptions());
+    return res.redirect(`${FRONTEND_URL}/?login=naver_success`);
+  } catch (error) {
+    console.error("Naver OAuth callback failed", error);
+    return res.redirect(`${FRONTEND_URL}/?login=naver_failed`);
   }
 });
 
