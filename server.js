@@ -124,6 +124,8 @@ const GOOGLE_VERIFIER_COOKIE = "kortrip_google_verifier";
 const GOOGLE_REDIRECT_URI = "https://api.kortripfollow.shop/auth/google/callback";
 const NAVER_STATE_COOKIE = "kortrip_naver_state";
 const NAVER_REDIRECT_URI = "https://api.kortripfollow.shop/auth/naver/callback";
+const KAKAO_STATE_COOKIE = "kortrip_kakao_state";
+const KAKAO_REDIRECT_URI = "https://api.kortripfollow.shop/auth/kakao/callback";
 const FRONTEND_URL = (process.env.FRONTEND_URL || "https://kortripfollow.shop")
   .replace(/\/$/, "");
 
@@ -185,6 +187,15 @@ function clearNaverOAuthCookie(res) {
     secure: !USE_LOCAL_DB,
     sameSite: "lax",
     path: "/auth/naver"
+  });
+}
+
+function clearKakaoOAuthCookie(res) {
+  res.clearCookie(KAKAO_STATE_COOKIE, {
+    httpOnly: true,
+    secure: !USE_LOCAL_DB,
+    sameSite: "lax",
+    path: "/auth/kakao"
   });
 }
 
@@ -274,6 +285,46 @@ async function findOrCreateNaverUser(profile) {
   try {
     return await User.create({
       accounts: [{ provider: "naver", providerUserId, email: null }],
+      displayName,
+      lastLoginAt: now
+    });
+  } catch (error) {
+    if (error?.code !== 11000) throw error;
+    user = await User.findOneAndUpdate(
+      accountQuery,
+      { $set: { displayName, updatedAt: now, lastLoginAt: now } },
+      { new: true, runValidators: true }
+    );
+    if (!user) throw error;
+    return user;
+  }
+}
+
+async function findOrCreateKakaoUser(profile) {
+  const providerUserId = profile?.id == null ? "" : String(profile.id);
+  if (!providerUserId) throw new Error("Kakao user ID missing");
+
+  const accountQuery = {
+    accounts: {
+      $elemMatch: { provider: "kakao", providerUserId }
+    }
+  };
+  const now = new Date();
+  const nickname = profile?.properties?.nickname ?? profile?.kakao_account?.profile?.nickname;
+  const displayName = typeof nickname === "string"
+    ? nickname.trim().slice(0, 80) || null
+    : null;
+
+  let user = await User.findOneAndUpdate(
+    accountQuery,
+    { $set: { displayName, updatedAt: now, lastLoginAt: now } },
+    { new: true, runValidators: true }
+  );
+  if (user) return user;
+
+  try {
+    return await User.create({
+      accounts: [{ provider: "kakao", providerUserId, email: null }],
       displayName,
       lastLoginAt: now
     });
@@ -457,6 +508,76 @@ app.get("/auth/naver/callback", async (req, res) => {
   } catch (error) {
     console.error("Naver OAuth callback failed", error);
     return res.redirect(`${FRONTEND_URL}/?login=naver_failed`);
+  }
+});
+
+app.get("/auth/kakao", (req, res) => {
+  const clientId = process.env.KAKAO_REST_API_KEY;
+  if (!clientId || !process.env.KAKAO_CLIENT_SECRET) {
+    return res.status(503).json({ error: "Kakao login is not configured" });
+  }
+
+  const state = randomBase64Url(24);
+  res.cookie(KAKAO_STATE_COOKIE, state, oauthCookieOptions("/auth/kakao"));
+
+  const authorizationUrl = new URL("https://kauth.kakao.com/oauth/authorize");
+  authorizationUrl.search = new URLSearchParams({
+    response_type: "code",
+    client_id: clientId,
+    redirect_uri: KAKAO_REDIRECT_URI,
+    state
+  }).toString();
+
+  return res.redirect(authorizationUrl.toString());
+});
+
+app.get("/auth/kakao/callback", async (req, res) => {
+  const cookies = parseCookies(req.headers.cookie);
+  const state = typeof req.query.state === "string" ? req.query.state : "";
+  const code = typeof req.query.code === "string" ? req.query.code : "";
+  const storedState = cookies[KAKAO_STATE_COOKIE];
+
+  clearKakaoOAuthCookie(res);
+
+  if (req.query.error || !code || !safeEqual(state, storedState)) {
+    return res.redirect(`${FRONTEND_URL}/?login=kakao_failed`);
+  }
+
+  try {
+    const tokenResponse = await fetch("https://kauth.kakao.com/oauth/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=utf-8" },
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        client_id: process.env.KAKAO_REST_API_KEY,
+        client_secret: process.env.KAKAO_CLIENT_SECRET,
+        redirect_uri: KAKAO_REDIRECT_URI,
+        code
+      })
+    });
+    if (!tokenResponse.ok) throw new Error(`Kakao token exchange failed: ${tokenResponse.status}`);
+
+    const tokens = await tokenResponse.json();
+    if (typeof tokens.access_token !== "string") {
+      throw new Error(`Kakao access token missing: ${tokens.error || "unknown error"}`);
+    }
+
+    const profileResponse = await fetch("https://kapi.kakao.com/v2/user/me", {
+      headers: {
+        Authorization: `Bearer ${tokens.access_token}`,
+        "Content-Type": "application/x-www-form-urlencoded;charset=utf-8"
+      }
+    });
+    if (!profileResponse.ok) throw new Error(`Kakao profile failed: ${profileResponse.status}`);
+
+    const profile = await profileResponse.json();
+    const user = await findOrCreateKakaoUser(profile);
+    const sessionToken = await createSession(user._id);
+    res.cookie(SESSION_COOKIE_NAME, sessionToken, sessionCookieOptions());
+    return res.redirect(`${FRONTEND_URL}/?login=kakao_success`);
+  } catch (error) {
+    console.error("Kakao OAuth callback failed", error);
+    return res.redirect(`${FRONTEND_URL}/?login=kakao_failed`);
   }
 });
 
