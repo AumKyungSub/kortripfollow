@@ -29,6 +29,7 @@ const ALLOWED_ORIGINS = new Set([
   "https://iridescent-semolina-29f8f8.netlify.app",
   "http://localhost:5173",
   "http://172.30.1.54:5173",
+  "https://kortripfollowfront.pages.dev",
   FRONTEND_URL
 ]);
 
