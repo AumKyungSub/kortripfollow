@@ -12,7 +12,7 @@ const MONGO_URI = process.env.MONGO_URI;
 const MONGO_DB_NAME = process.env.MONGO_DB_NAME;
 const HAS_MONGO_DB = Boolean(MONGO_URI);
 let mongoReady = false;
-const FRONTEND_URL = (process.env.FRONTEND_URL || "https://kortripfollow.shop")
+const FRONTEND_URL = (process.env.FRONTEND_URL || "https://kortripfollow.com")
   .replace(/\/$/, "");
 const COOKIE_SECURE = process.env.COOKIE_SECURE
   ? process.env.COOKIE_SECURE === "true"
@@ -229,11 +229,11 @@ const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 14;
 const OAUTH_COOKIE_MAX_AGE_MS = 1000 * 60 * 10;
 const GOOGLE_STATE_COOKIE = "kortrip_google_state";
 const GOOGLE_VERIFIER_COOKIE = "kortrip_google_verifier";
-const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || "https://api.kortripfollow.shop/auth/google/callback";
+const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || "https://api.kortripfollow.com/auth/google/callback";
 const NAVER_STATE_COOKIE = "kortrip_naver_state";
-const NAVER_REDIRECT_URI = process.env.NAVER_REDIRECT_URI || "https://api.kortripfollow.shop/auth/naver/callback";
+const NAVER_REDIRECT_URI = process.env.NAVER_REDIRECT_URI || "https://api.kortripfollow.com/auth/naver/callback";
 const KAKAO_STATE_COOKIE = "kortrip_kakao_state";
-const KAKAO_REDIRECT_URI = process.env.KAKAO_REDIRECT_URI || "https://api.kortripfollow.shop/auth/kakao/callback";
+const KAKAO_REDIRECT_URI = process.env.KAKAO_REDIRECT_URI || "https://api.kortripfollow.com/auth/kakao/callback";
 
 function parseCookies(cookieHeader = "") {
   return Object.fromEntries(
