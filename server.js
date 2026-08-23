@@ -17,6 +17,24 @@ const FRONTEND_URL = (process.env.FRONTEND_URL || "https://kortripfollow.com")
 const COOKIE_SECURE = process.env.COOKIE_SECURE
   ? process.env.COOKIE_SECURE === "true"
   : FRONTEND_URL.startsWith("https://");
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+const DEV_LOGIN_ENABLED = !IS_PRODUCTION && process.env.ENABLE_DEV_LOGIN === "true";
+const DEFAULT_OPERATOR_ACCOUNT = IS_PRODUCTION
+  ? { provider: "naver", providerUserId: "MseWCjpbk4rEv60wMmoJb3ccntNZad9wBxpLvc-ZZW8" }
+  : { provider: "google", providerUserId: "109319327339050443610" };
+const OPERATOR_PROVIDER = process.env.OPERATOR_PROVIDER || DEFAULT_OPERATOR_ACCOUNT.provider;
+const OPERATOR_PROVIDER_USER_ID = process.env.OPERATOR_PROVIDER_USER_ID || DEFAULT_OPERATOR_ACCOUNT.providerUserId;
+
+function isPrivateHostname(hostname = "") {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" ||
+    /^10\./.test(hostname) || /^192\.168\./.test(hostname) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(hostname);
+}
+
+function isPrivateRequest(req) {
+  const address = (req.ip || req.socket.remoteAddress || "").replace(/^::ffff:/, "");
+  return isPrivateHostname(address);
+}
 
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
@@ -40,6 +58,12 @@ const ALLOWED_ORIGINS = new Set([
 app.use(cors({
   origin(origin, callback) {
     if (!origin || ALLOWED_ORIGINS.has(origin)) return callback(null, true);
+    try {
+      const url = new URL(origin);
+      if (!IS_PRODUCTION && url.protocol === "http:" && url.port === "5173" && isPrivateHostname(url.hostname)) {
+        return callback(null, true);
+      }
+    } catch {}
     return callback(new Error("Origin not allowed by CORS"));
   },
   credentials: true
@@ -99,7 +123,7 @@ const userSchema = new mongoose.Schema({
     provider: {
       type: String,
       required: true,
-      enum: ["google", "kakao", "naver"]
+      enum: ["google", "kakao", "naver", "dev"]
     },
     providerUserId: { type: String, required: true },
     email: { type: String, default: null }
@@ -169,6 +193,23 @@ const itineraryDaySchema = new mongoose.Schema({
   places: { type: [itineraryPlaceSchema], default: [] }
 }, { _id: false });
 
+const scheduleItemSchema = new mongoose.Schema({
+  time: { type: String, required: true, trim: true, maxlength: 5 },
+  title: { type: String, required: true, trim: true, maxlength: 120 },
+  memo: { type: String, default: "", trim: true, maxlength: 500 }
+}, { versionKey: false });
+
+const scheduleDaySchema = new mongoose.Schema({
+  date: { type: Date, required: true },
+  items: { type: [scheduleItemSchema], default: [] }
+}, { versionKey: false });
+
+const checklistItemSchema = new mongoose.Schema({
+  text: { type: String, required: true, trim: true, maxlength: 120 },
+  checked: { type: Boolean, default: false },
+  ownerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null }
+}, { timestamps: true, versionKey: false });
+
 const itinerarySchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -179,11 +220,37 @@ const itinerarySchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true, maxlength: 100 },
   description: { type: String, default: "", trim: true, maxlength: 2000 },
   visibility: { type: String, enum: VISIBILITY_TYPES, default: "private" },
-  days: { type: [itineraryDaySchema], default: [] }
+  days: { type: [itineraryDaySchema], default: [] },
+  schedule: { type: [scheduleDaySchema], default: [] },
+  checklist: { type: [checklistItemSchema], default: [] },
+  editorIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  editPasswordHash: { type: String, default: null },
+  sourceItineraryId: { type: mongoose.Schema.Types.ObjectId, ref: "Itinerary", default: null },
+  importCount: { type: Number, default: 0, min: 0 },
+  operatorRecommended: { type: Boolean, default: false }
 }, { collection: "itineraries", versionKey: false, timestamps: true });
 
 itinerarySchema.index({ userId: 1, updatedAt: -1 }, { name: "user_itineraries_recent" });
 itinerarySchema.index({ visibility: 1, updatedAt: -1 }, { name: "visible_itineraries_recent" });
+itinerarySchema.index(
+  { userId: 1, sourceItineraryId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { sourceItineraryId: { $type: "objectId" } },
+    name: "unique_imported_itinerary"
+  }
+);
+
+const itineraryImportSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  sourceItineraryId: { type: mongoose.Schema.Types.ObjectId, ref: "Itinerary", required: true },
+  createdAt: { type: Date, default: Date.now, immutable: true }
+}, { collection: "itinerary_imports", versionKey: false });
+
+itineraryImportSchema.index(
+  { userId: 1, sourceItineraryId: 1 },
+  { unique: true, name: "unique_member_itinerary_import" }
+);
 
 const visitSchema = new mongoose.Schema({
   userId: {
@@ -206,6 +273,7 @@ visitSchema.index(
 
 const Favorite = mongoose.model("Favorite", favoriteSchema);
 const Itinerary = mongoose.model("Itinerary", itinerarySchema);
+const ItineraryImport = mongoose.model("ItineraryImport", itineraryImportSchema);
 const Visit = mongoose.model("Visit", visitSchema);
 
 if (mongoReady) {
@@ -215,8 +283,29 @@ if (mongoReady) {
       Session.init(),
       Favorite.init(),
       Itinerary.init(),
+      ItineraryImport.init(),
       Visit.init()
     ]);
+    const existingImports = await Itinerary.find({ sourceItineraryId: { $ne: null } })
+      .select("userId sourceItineraryId")
+      .lean();
+    for (const existingImport of existingImports) {
+      const seeded = await ItineraryImport.updateOne(
+        { userId: existingImport.userId, sourceItineraryId: existingImport.sourceItineraryId },
+        { $setOnInsert: {
+          userId: existingImport.userId,
+          sourceItineraryId: existingImport.sourceItineraryId,
+          createdAt: new Date()
+        } },
+        { upsert: true }
+      );
+      if (seeded.upsertedCount === 1) {
+        await Itinerary.updateOne(
+          { _id: existingImport.sourceItineraryId },
+          { $inc: { importCount: 1 } }
+        );
+      }
+    }
     console.log("Authentication and member feature indexes ready");
   } catch (error) {
     console.error("MongoDB index initialization failed:", error.message);
@@ -592,6 +681,8 @@ async function attachPlaces(documents) {
 
 async function attachItineraryPlaces(document) {
   const item = document.toObject ? document.toObject() : document;
+  const hasEditPassword = Boolean(item.editPasswordHash);
+  delete item.editPasswordHash;
   const days = await Promise.all((item.days || []).map(async day => ({
     ...day,
     places: await Promise.all((day.places || []).map(async reference => {
@@ -599,7 +690,41 @@ async function attachItineraryPlaces(document) {
       return { ...reference, place: placeSummary(reference.placeType, place) };
     }))
   })));
-  return { ...item, days };
+  const editors = item.editorIds?.length
+    ? await User.find({ _id: { $in: item.editorIds } })
+        .select("displayName accounts.email")
+        .lean()
+    : [];
+  const owner = await User.findById(item.userId).select("displayName").lean();
+  return {
+    ...item,
+    days,
+    hasEditPassword,
+    owner: owner ? { _id: owner._id, displayName: owner.displayName } : null,
+    editors: editors.map(editor => ({
+      _id: editor._id,
+      displayName: editor.displayName,
+      email: editor.accounts?.find(account => account.email)?.email || null
+    }))
+  };
+}
+
+function hashEditPassword(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+function verifyEditPassword(password, storedValue) {
+  const [salt, storedHash] = String(storedValue || "").split(":");
+  if (!salt || !storedHash) return false;
+  const candidate = crypto.scryptSync(password, salt, 64);
+  const expected = Buffer.from(storedHash, "hex");
+  return candidate.length === expected.length && crypto.timingSafeEqual(candidate, expected);
+}
+
+function validEditPassword(value) {
+  return typeof value === "string" && value.length >= 4 && value.length <= 32;
 }
 
 async function attachRatingSummaries(placeType, places) {
@@ -657,6 +782,29 @@ function parseItineraryPayload(body = {}, partial = false) {
             : []
         }))
       : body.days;
+  }
+  if (!partial || body.schedule !== undefined) {
+    payload.schedule = Array.isArray(body.schedule)
+      ? body.schedule.map(day => ({
+          date: day?.date,
+          items: Array.isArray(day?.items) ? day.items.map(item => ({
+            ...((item?._id && mongoose.isValidObjectId(item._id)) ? { _id: item._id } : {}),
+            time: item?.time,
+            title: item?.title,
+            memo: item?.memo ?? ""
+          })) : []
+        }))
+      : body.schedule;
+  }
+  if (!partial || body.checklist !== undefined) {
+    payload.checklist = Array.isArray(body.checklist)
+      ? body.checklist.map(item => ({
+          ...((item?._id && mongoose.isValidObjectId(item._id)) ? { _id: item._id } : {}),
+          text: item?.text,
+          checked: Boolean(item?.checked),
+          ownerId: item?.ownerId || null
+        }))
+      : body.checklist;
   }
   return payload;
 }
@@ -924,6 +1072,43 @@ app.get("/auth/session", async (req, res, next) => {
   }
 });
 
+app.post("/auth/dev-login", async (req, res, next) => {
+  try {
+    if (!DEV_LOGIN_ENABLED || !isPrivateRequest(req)) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    if (!mongoReady) {
+      return res.status(503).json({ error: "Development login requires MongoDB" });
+    }
+
+    const configuredId = process.env.DEV_LOGIN_ID || "";
+    const configuredPassword = process.env.DEV_LOGIN_PASSWORD || "";
+    const suppliedId = typeof req.body?.id === "string" ? req.body.id : "";
+    const suppliedPassword = typeof req.body?.password === "string" ? req.body.password : "";
+    if (!configuredId || !configuredPassword || !safeEqual(suppliedId, configuredId) || !safeEqual(suppliedPassword, configuredPassword)) {
+      return res.status(401).json({ error: "Invalid development credentials" });
+    }
+
+    const now = new Date();
+    const user = await User.findOneAndUpdate(
+      { accounts: { $elemMatch: { provider: "dev", providerUserId: configuredId } } },
+      {
+        $set: { displayName: "Kortrip Developer", updatedAt: now, lastLoginAt: now },
+        $setOnInsert: { accounts: [{ provider: "dev", providerUserId: configuredId, email: null }] }
+      },
+      { new: true, upsert: true, runValidators: true }
+    );
+    const sessionToken = await createSession(user._id);
+    res.cookie(SESSION_COOKIE_NAME, sessionToken, sessionCookieOptions());
+    return res.json({
+      authenticated: true,
+      user: { id: user._id, displayName: user.displayName, providers: ["dev"] }
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 app.post("/auth/logout", async (req, res, next) => {
   try {
     if (mongoReady) {
@@ -1040,13 +1225,21 @@ app.delete("/favorites/:placeType/:placeId", requireAuth, async (req, res, next)
 app.post("/itineraries", requireAuth, async (req, res, next) => {
   try {
     const payload = parseItineraryPayload(req.body);
+    const editPassword = req.body?.editPassword;
+    if (editPassword && !validEditPassword(editPassword)) {
+      return res.status(400).json({ error: "Edit password must be 4 to 32 characters" });
+    }
     const references = Array.isArray(payload.days)
       ? payload.days.flatMap(day => day.places || [])
       : [];
     if (!await validatePlaceReferences(references)) {
       return res.status(400).json({ error: "Invalid place reference" });
     }
-    const itinerary = await Itinerary.create({ userId: req.user._id, ...payload });
+    const itinerary = await Itinerary.create({
+      userId: req.user._id,
+      ...payload,
+      editPasswordHash: editPassword ? hashEditPassword(editPassword) : null
+    });
     return res.status(201).json(await attachItineraryPlaces(itinerary));
   } catch (error) {
     if (error?.name === "ValidationError" || error?.name === "CastError") {
@@ -1059,7 +1252,37 @@ app.post("/itineraries", requireAuth, async (req, res, next) => {
 app.get("/itineraries/mine", requireAuth, async (req, res, next) => {
   try {
     const itineraries = await Itinerary.find({ userId: req.user._id }).sort({ updatedAt: -1 }).lean();
-    return res.json(await Promise.all(itineraries.map(attachItineraryPlaces)));
+    const result = await Promise.all(itineraries.map(async itinerary => ({
+      ...(await attachItineraryPlaces(itinerary)),
+      isOwner: true,
+      canEdit: true
+    })));
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.get("/itineraries/joined", requireAuth, async (req, res, next) => {
+  try {
+    const itineraries = await Itinerary.find({
+      $or: [
+        { userId: req.user._id, "editorIds.0": { $exists: true } },
+        { editorIds: req.user._id }
+      ]
+    })
+      .sort({ updatedAt: -1 })
+      .lean();
+    const result = await Promise.all(itineraries.map(async itinerary => {
+      const isOwner = itinerary.userId.equals(req.user._id);
+      return {
+        ...(await attachItineraryPlaces(itinerary)),
+        isOwner,
+        canEdit: true,
+        shareRole: isOwner ? "sharedByMe" : "sharedWithMe"
+      };
+    }));
+    return res.json(result);
   } catch (error) {
     return next(error);
   }
@@ -1067,12 +1290,118 @@ app.get("/itineraries/mine", requireAuth, async (req, res, next) => {
 
 app.get("/itineraries/public", async (req, res, next) => {
   try {
-    const itineraries = await Itinerary.find({ visibility: "public" })
-      .select("title description visibility days createdAt updatedAt")
-      .sort({ updatedAt: -1 })
+    const category = ["operator", "member", "popular"].includes(req.query.category)
+      ? req.query.category
+      : "member";
+    const operator = await User.findOne({
+      accounts: {
+        $elemMatch: {
+          provider: OPERATOR_PROVIDER,
+          providerUserId: OPERATOR_PROVIDER_USER_ID
+        }
+      }
+    }).select("_id").lean();
+    const filter = {
+      visibility: "public",
+      ...(category === "operator"
+        ? { userId: operator?._id || new mongoose.Types.ObjectId() }
+        : {}),
+      ...(category === "member" && operator?._id
+        ? { userId: { $ne: operator._id } }
+        : {})
+    };
+    let itineraries = await Itinerary.find(filter)
+      .select("userId title description visibility days importCount operatorRecommended createdAt updatedAt")
+      .sort(category === "popular" ? { importCount: -1 } : { updatedAt: -1 })
       .lean();
-    return res.json(await Promise.all(itineraries.map(attachItineraryPlaces)));
+    if (category === "popular") {
+      for (let start = 0; start < itineraries.length;) {
+        let end = start + 1;
+        while (end < itineraries.length && itineraries[end].importCount === itineraries[start].importCount) end += 1;
+        for (let index = end - 1; index > start; index -= 1) {
+          const swapIndex = start + crypto.randomInt(index - start + 1);
+          [itineraries[index], itineraries[swapIndex]] = [itineraries[swapIndex], itineraries[index]];
+        }
+        start = end;
+      }
+      itineraries = itineraries.slice(0, 10);
+    }
+    const user = await getSessionUser(req);
+    const importedSourceIds = user
+      ? new Set((await Itinerary.find({
+          userId: user._id,
+          sourceItineraryId: { $in: itineraries.map(item => item._id) }
+        }).select("sourceItineraryId").lean()).map(item => String(item.sourceItineraryId)))
+      : new Set();
+    const result = await Promise.all(itineraries.map(async itinerary => {
+      const attached = await attachItineraryPlaces(itinerary);
+      delete attached.userId;
+      return { ...attached, imported: importedSourceIds.has(String(itinerary._id)) };
+    }));
+    return res.json(result);
   } catch (error) {
+    return next(error);
+  }
+});
+
+app.post("/itineraries/:id/copy", requireAuth, async (req, res, next) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: "Itinerary not found" });
+    const source = await Itinerary.findOne({ _id: req.params.id, visibility: "public" }).lean();
+    if (!source) return res.status(404).json({ error: "Public itinerary not found" });
+    const alreadyImported = await Itinerary.exists({ userId: req.user._id, sourceItineraryId: source._id });
+    if (alreadyImported) return res.status(409).json({ error: "Itinerary already imported" });
+
+    const copied = await Itinerary.create({
+      userId: req.user._id,
+      title: source.title,
+      description: source.description || "",
+      visibility: "unlisted",
+      days: (source.days || []).map(day => ({
+        date: day.date || null,
+        title: day.title || "",
+        places: (day.places || []).map((place, order) => ({
+          placeType: place.placeType,
+          placeId: place.placeId,
+          order,
+          memo: place.memo || ""
+        }))
+      })),
+      schedule: (source.schedule || []).map(day => ({
+        date: day.date,
+        items: (day.items || []).map(item => ({
+          time: item.time,
+          title: item.title,
+          memo: item.memo || ""
+        }))
+      })),
+      checklist: (source.checklist || []).map(item => ({
+        text: item.text,
+        checked: Boolean(item.checked),
+        ownerId: null
+      })),
+      editorIds: [],
+      editPasswordHash: null,
+      sourceItineraryId: source._id
+    });
+    const importRecord = await ItineraryImport.updateOne(
+      { userId: req.user._id, sourceItineraryId: source._id },
+      { $setOnInsert: { userId: req.user._id, sourceItineraryId: source._id, createdAt: new Date() } },
+      { upsert: true }
+    );
+    if (importRecord.upsertedCount === 1) {
+      await Itinerary.updateOne({ _id: source._id }, { $inc: { importCount: 1 } });
+    }
+    return res.status(201).json({
+      ...(await attachItineraryPlaces(copied)),
+      isOwner: true,
+      canEdit: true
+    });
+  } catch (error) {
+    if (error?.code === 11000) return res.status(409).json({ error: "Itinerary already imported" });
+    if (error?.name === "ValidationError" || error?.name === "CastError") {
+      return res.status(400).json({ error: "Unable to copy itinerary" });
+    }
     return next(error);
   }
 });
@@ -1085,12 +1414,16 @@ app.get("/itineraries/:id", async (req, res, next) => {
 
     const user = await getSessionUser(req);
     const isOwner = user && itinerary.userId.equals(user._id);
-    if (itinerary.visibility === "private" && !isOwner) {
+    const canEdit = Boolean(user && (isOwner || itinerary.editorIds?.some(id => id.equals(user._id))));
+    if (itinerary.visibility === "private" && !canEdit) {
       return res.status(404).json({ error: "Itinerary not found" });
     }
     const response = await attachItineraryPlaces(itinerary);
-    if (!isOwner) delete response.userId;
-    return res.json({ ...response, isOwner: Boolean(isOwner) });
+    if (!isOwner) {
+      delete response.userId;
+      delete response.editorIds;
+    }
+    return res.json({ ...response, isOwner: Boolean(isOwner), canEdit });
   } catch (error) {
     return next(error);
   }
@@ -1100,6 +1433,13 @@ app.patch("/itineraries/:id", requireAuth, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: "Itinerary not found" });
     const payload = parseItineraryPayload(req.body, true);
+    const existing = await Itinerary.findById(req.params.id).select("userId editorIds");
+    if (!existing) return res.status(404).json({ error: "Itinerary not found" });
+    const isOwner = existing.userId.equals(req.user._id);
+    const isEditor = existing.editorIds?.some(id => id.equals(req.user._id));
+    if (!isOwner && !isEditor) return res.status(404).json({ error: "Itinerary not found" });
+    if (!isOwner) delete payload.visibility;
+    delete payload.checklist;
     if (payload.days !== undefined) {
       const references = Array.isArray(payload.days) ? payload.days.flatMap(day => day.places || []) : [];
       if (!Array.isArray(payload.days) || !await validatePlaceReferences(references)) {
@@ -1107,7 +1447,7 @@ app.patch("/itineraries/:id", requireAuth, async (req, res, next) => {
       }
     }
     const itinerary = await Itinerary.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user._id },
+      { _id: req.params.id },
       { $set: payload },
       { new: true, runValidators: true }
     );
@@ -1117,6 +1457,126 @@ app.patch("/itineraries/:id", requireAuth, async (req, res, next) => {
     if (error?.name === "ValidationError" || error?.name === "CastError") {
       return res.status(400).json({ error: "Invalid itinerary" });
     }
+    return next(error);
+  }
+});
+
+app.post("/itineraries/:id/checklist", requireAuth, async (req, res, next) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: "Itinerary not found" });
+    const itinerary = await Itinerary.findById(req.params.id);
+    if (!itinerary) return res.status(404).json({ error: "Itinerary not found" });
+    const canEdit = itinerary.userId.equals(req.user._id) || itinerary.editorIds?.some(id => id.equals(req.user._id));
+    if (!canEdit) return res.status(403).json({ error: "Edit access required" });
+    const text = String(req.body?.text || "").trim();
+    if (!text) return res.status(400).json({ error: "Checklist text is required" });
+    itinerary.checklist.push({
+      text,
+      checked: false,
+      ownerId: req.body?.scope === "personal" ? req.user._id : null
+    });
+    await itinerary.save();
+    return res.status(201).json(await attachItineraryPlaces(itinerary));
+  } catch (error) {
+    if (error?.name === "ValidationError") return res.status(400).json({ error: "Invalid checklist item" });
+    return next(error);
+  }
+});
+
+app.patch("/itineraries/:id/checklist/:itemId", requireAuth, async (req, res, next) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id) || !mongoose.isValidObjectId(req.params.itemId)) {
+      return res.status(404).json({ error: "Checklist item not found" });
+    }
+    const itinerary = await Itinerary.findById(req.params.id);
+    if (!itinerary) return res.status(404).json({ error: "Itinerary not found" });
+    const canEdit = itinerary.userId.equals(req.user._id) || itinerary.editorIds?.some(id => id.equals(req.user._id));
+    const item = itinerary.checklist.id(req.params.itemId);
+    if (!canEdit || !item) return res.status(404).json({ error: "Checklist item not found" });
+    if (item.ownerId && !item.ownerId.equals(req.user._id)) {
+      return res.status(403).json({ error: "Only the checklist owner can update this item" });
+    }
+    if (req.body?.checked !== undefined) item.checked = Boolean(req.body.checked);
+    await itinerary.save();
+    return res.json(await attachItineraryPlaces(itinerary));
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.delete("/itineraries/:id/checklist/:itemId", requireAuth, async (req, res, next) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id) || !mongoose.isValidObjectId(req.params.itemId)) {
+      return res.status(404).json({ error: "Checklist item not found" });
+    }
+    const itinerary = await Itinerary.findById(req.params.id);
+    if (!itinerary) return res.status(404).json({ error: "Itinerary not found" });
+    const canEdit = itinerary.userId.equals(req.user._id) || itinerary.editorIds?.some(id => id.equals(req.user._id));
+    const item = itinerary.checklist.id(req.params.itemId);
+    if (!canEdit || !item) return res.status(404).json({ error: "Checklist item not found" });
+    if (item.ownerId && !item.ownerId.equals(req.user._id)) {
+      return res.status(403).json({ error: "Only the checklist owner can delete this item" });
+    }
+    item.deleteOne();
+    await itinerary.save();
+    return res.json(await attachItineraryPlaces(itinerary));
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.post("/itineraries/:id/edit-access", requireAuth, async (req, res, next) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: "Itinerary not found" });
+    const password = String(req.body?.password || "");
+    const itinerary = await Itinerary.findById(req.params.id).select("+editPasswordHash");
+    if (!itinerary || itinerary.visibility === "private") return res.status(404).json({ error: "Itinerary not found" });
+    if (!itinerary.editPasswordHash) return res.status(403).json({ error: "Edit password is not enabled" });
+    if (!verifyEditPassword(password, itinerary.editPasswordHash)) {
+      return res.status(403).json({ error: "Incorrect edit password" });
+    }
+    if (!itinerary.userId.equals(req.user._id)) {
+      await Itinerary.updateOne({ _id: itinerary._id }, { $addToSet: { editorIds: req.user._id } });
+    }
+    const updated = await Itinerary.findById(itinerary._id);
+    return res.json({ ...(await attachItineraryPlaces(updated)), canEdit: true, isOwner: itinerary.userId.equals(req.user._id) });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.put("/itineraries/:id/edit-password", requireAuth, async (req, res, next) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: "Itinerary not found" });
+    const password = String(req.body?.password || "");
+    if (!validEditPassword(password)) {
+      return res.status(400).json({ error: "Edit password must be 4 to 32 characters" });
+    }
+    const itinerary = await Itinerary.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      { $set: { editPasswordHash: hashEditPassword(password) } },
+      { new: true }
+    );
+    if (!itinerary) return res.status(403).json({ error: "Only the owner can change the edit password" });
+    return res.json({ hasEditPassword: true });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.delete("/itineraries/:id/editors/:userId", requireAuth, async (req, res, next) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id) || !mongoose.isValidObjectId(req.params.userId)) {
+      return res.status(404).json({ error: "Itinerary not found" });
+    }
+    const itinerary = await Itinerary.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      { $pull: { editorIds: req.params.userId } },
+      { new: true }
+    );
+    if (!itinerary) return res.status(403).json({ error: "Only the owner can manage editors" });
+    return res.json(await attachItineraryPlaces(itinerary));
+  } catch (error) {
     return next(error);
   }
 });
