@@ -400,7 +400,7 @@ const externalPlaceImageSchema = new mongoose.Schema({
 }, { _id: false });
 
 const externalPlaceSchema = new mongoose.Schema({
-  source: { type: String, enum: ["tourApi"], required: true },
+  source: { type: String, enum: ["tourApi", "manual"], required: true },
   externalId: { type: String, required: true, trim: true },
   publicId: { type: Number, default: null },
   status: { type: String, enum: ["draft", "published"], default: "draft" },
@@ -447,6 +447,7 @@ externalPlaceSchema.index(
 const ExternalPlace = mongoose.model("ExternalPlace", externalPlaceSchema);
 
 const EXTERNAL_PUBLIC_ID_OFFSET = 1_000_000_000;
+const MANUAL_PUBLIC_ID_OFFSET = 3_000_000_000;
 const EXTERNAL_REGION_LABELS = {
   SEOUL: { ko: "서울", en: "Seoul" },
   GGICN: { ko: "경기도 / 인천", en: "Gyeonggi / Incheon" },
@@ -458,16 +459,16 @@ const EXTERNAL_REGION_LABELS = {
   OTHER: { ko: "기타", en: "Other" }
 };
 
-function externalPublicId(externalId) {
+function externalPublicId(externalId, source = "tourApi") {
   const contentId = Number(externalId);
   if (!Number.isSafeInteger(contentId) || contentId < 1) return null;
-  const publicId = EXTERNAL_PUBLIC_ID_OFFSET + contentId;
+  const publicId = (source === "manual" ? MANUAL_PUBLIC_ID_OFFSET : EXTERNAL_PUBLIC_ID_OFFSET) + contentId;
   return Number.isSafeInteger(publicId) ? publicId : null;
 }
 
 function externalPlaceToPublic(place) {
   if (!place) return null;
-  const publicId = place.publicId || externalPublicId(place.externalId);
+  const publicId = place.publicId || externalPublicId(place.externalId, place.source);
   const koName = place.name || "";
   const enName = place.nameEn || koName;
   const region = EXTERNAL_REGION_LABELS[place.regionCode] || EXTERNAL_REGION_LABELS.OTHER;
@@ -508,12 +509,12 @@ function externalPlaceToPublic(place) {
         en: place.descriptionEn || place.description || enSummary
       }
     },
-    attribution: {
+    attribution: place.source === "tourApi" ? {
       provider: image.provider || "한국관광공사 TourAPI",
       hasImage,
       copyrightType: hasImage ? (image.copyrightType || "Type1") : null,
       license: hasImage ? (image.license || "KOGL-1") : null
-    },
+    } : null,
     officialLinks: {
       homepage: place.officialLinks?.homepage || "",
       instagram: place.officialLinks?.instagram || ""
@@ -1446,10 +1447,37 @@ app.post(
   }
 );
 
+app.post("/operator/manual-places/draft", requireAuth, requireOperator, async (req, res, next) => {
+  try {
+    if (!mongoReady) return res.status(503).json({ error: "Database is not available" });
+    const externalId = String(Date.now() * 1000 + crypto.randomInt(1000));
+    const draft = await ExternalPlace.create({
+      source: "manual",
+      externalId,
+      status: "draft",
+      placeType: "attraction",
+      name: "새 장소",
+      regionCode: "OTHER",
+      createdBy: req.user._id,
+      updatedBy: req.user._id
+    });
+    return res.status(201).json(draft);
+  } catch (error) {
+    return next(error);
+  }
+});
+
 app.get("/operator/external-places", requireAuth, requireOperator, async (req, res, next) => {
   try {
     if (!mongoReady) return res.status(503).json({ error: "Database is not available" });
-    const drafts = await ExternalPlace.find({ status: { $in: ["draft", "published"] } })
+    const source = typeof req.query.source === "string" ? req.query.source : "";
+    if (source && !["tourApi", "manual"].includes(source)) {
+      return res.status(400).json({ error: "Invalid external place source" });
+    }
+    const drafts = await ExternalPlace.find({
+      status: { $in: ["draft", "published"] },
+      ...(source ? { source } : {})
+    })
       .sort({ updatedAt: -1 })
       .lean();
     return res.json(drafts.map(draft => {
@@ -1483,6 +1511,15 @@ app.patch("/operator/external-places/:id", requireAuth, requireOperator, async (
     const updates = Object.fromEntries(
       Object.entries(allowed).filter(([, value]) => typeof value === "string")
     );
+    for (const coordinate of ["latitude", "longitude"]) {
+      if (req.body?.[coordinate] === undefined || req.body?.[coordinate] === "") continue;
+      const value = Number(req.body[coordinate]);
+      const valid = Number.isFinite(value) && (coordinate === "latitude"
+        ? value >= -90 && value <= 90
+        : value >= -180 && value <= 180);
+      if (!valid) return res.status(400).json({ error: `올바른 ${coordinate === "latitude" ? "위도" : "경도"}를 입력하세요` });
+      updates[`coordinates.${coordinate}`] = value;
+    }
     if (!Object.keys(updates).length) {
       return res.status(400).json({ error: "No editable fields supplied" });
     }
@@ -1571,6 +1608,8 @@ app.post("/operator/external-places/:id/publish", requireAuth, requireOperator, 
     if (!draft.shortDescriptionEn?.trim()) missing.push("영어 짧은 소개");
     if (!draft.description?.trim()) missing.push("한국어 상세 설명");
     if (!draft.descriptionEn?.trim()) missing.push("영어 상세 설명");
+    if (draft.source === "manual" && !Number.isFinite(draft.coordinates?.latitude)) missing.push("위도");
+    if (draft.source === "manual" && !Number.isFinite(draft.coordinates?.longitude)) missing.push("경도");
     if (missing.length) {
       return res.status(400).json({ error: `공개 전 필수 항목을 입력하세요: ${missing.join(", ")}` });
     }
@@ -1579,8 +1618,8 @@ app.post("/operator/external-places/:id/publish", requireAuth, requireOperator, 
       draft.selectedImage = undefined;
     }
 
-    const publicId = externalPublicId(draft.externalId);
-    if (!publicId) return res.status(400).json({ error: "TourAPI ID로 공개 ID를 만들 수 없습니다" });
+    const publicId = externalPublicId(draft.externalId, draft.source);
+    if (!publicId) return res.status(400).json({ error: "외부 API ID로 공개 ID를 만들 수 없습니다" });
 
     draft.publicId = publicId;
     draft.status = "published";
@@ -2604,6 +2643,12 @@ app.use((error, req, res, next) => {
   console.error(error);
   if (error.message === "Origin not allowed by CORS") {
     return res.status(403).json({ error: "Forbidden origin" });
+  }
+  if (Number.isInteger(error.status) && error.status >= 400 && error.status < 600) {
+    const safeApiMessage = error.status >= 500
+        ? "외부 API 요청을 처리하지 못했습니다. 잠시 후 다시 시도하세요."
+        : error.message;
+    return res.status(error.status).json({ error: safeApiMessage });
   }
   return res.status(500).json({ error: "Internal server error" });
 });
