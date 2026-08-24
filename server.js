@@ -508,11 +508,12 @@ function externalPlaceToPublic(place) {
         en: place.descriptionEn || place.description || enSummary
       }
     },
-    attribution: hasImage ? {
+    attribution: {
       provider: image.provider || "한국관광공사 TourAPI",
-      copyrightType: image.copyrightType || "Type1",
-      license: image.license || "KOGL-1"
-    } : null,
+      hasImage,
+      copyrightType: hasImage ? (image.copyrightType || "Type1") : null,
+      license: hasImage ? (image.license || "KOGL-1") : null
+    },
     officialLinks: {
       homepage: place.officialLinks?.homepage || "",
       instagram: place.officialLinks?.instagram || ""
