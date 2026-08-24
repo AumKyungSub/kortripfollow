@@ -11,6 +11,8 @@ const app = express();
 const MONGO_URI = process.env.MONGO_URI;
 const MONGO_DB_NAME = process.env.MONGO_DB_NAME;
 const HAS_MONGO_DB = Boolean(MONGO_URI);
+const TOUR_API_SERVICE_KEY = process.env.TOUR_API_SERVICE_KEY?.trim() || "";
+const HAS_TOUR_API = Boolean(TOUR_API_SERVICE_KEY);
 let mongoReady = false;
 const FRONTEND_URL = (process.env.FRONTEND_URL || "https://kortripfollow.com")
   .replace(/\/$/, "");
@@ -24,6 +26,13 @@ const DEFAULT_OPERATOR_ACCOUNT = IS_PRODUCTION
   : { provider: "google", providerUserId: "109319327339050443610" };
 const OPERATOR_PROVIDER = process.env.OPERATOR_PROVIDER || DEFAULT_OPERATOR_ACCOUNT.provider;
 const OPERATOR_PROVIDER_USER_ID = process.env.OPERATOR_PROVIDER_USER_ID || DEFAULT_OPERATOR_ACCOUNT.providerUserId;
+const TOUR_API_BASE_URL = "https://apis.data.go.kr/B551011/KorService2";
+const TOUR_API_ENGLISH_BASE_URL = "https://apis.data.go.kr/B551011/EngService2";
+const TOUR_API_TIMEOUT_MS = 8000;
+
+if (!HAS_TOUR_API) {
+  console.info("TourAPI integration is disabled: TOUR_API_SERVICE_KEY is not configured");
+}
 
 function isPrivateHostname(hostname = "") {
   return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" ||
@@ -34,6 +43,271 @@ function isPrivateHostname(hostname = "") {
 function isPrivateRequest(req) {
   const address = (req.ip || req.socket.remoteAddress || "").replace(/^::ffff:/, "");
   return isPrivateHostname(address);
+}
+
+async function requestTourApi(path, query = {}, baseUrl = TOUR_API_BASE_URL) {
+  if (!HAS_TOUR_API) {
+    const error = new Error("TourAPI is not configured");
+    error.status = 503;
+    throw error;
+  }
+
+  const params = new URLSearchParams({
+    MobileOS: "ETC",
+    MobileApp: "Kortrip",
+    _type: "json",
+    ...query
+  });
+  const encodedServiceKey = /%[0-9A-F]{2}/i.test(TOUR_API_SERVICE_KEY)
+    ? TOUR_API_SERVICE_KEY
+    : encodeURIComponent(TOUR_API_SERVICE_KEY);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), TOUR_API_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(
+      `${baseUrl}/${path}?serviceKey=${encodedServiceKey}&${params}`,
+      {
+      signal: controller.signal,
+      headers: { Accept: "application/json" }
+      }
+    );
+    const raw = await response.text();
+    let payload;
+    try {
+      payload = JSON.parse(raw);
+    } catch {
+      const error = new Error("TourAPI returned an invalid response");
+      error.status = 502;
+      throw error;
+    }
+
+    const resultCode = payload?.response?.header?.resultCode;
+    if (!response.ok || resultCode !== "0000") {
+      const error = new Error("TourAPI request failed");
+      error.status = response.status >= 400 ? response.status : 502;
+      error.tourApiCode = resultCode || null;
+      throw error;
+    }
+
+    return payload.response.body;
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      const timeoutError = new Error("TourAPI request timed out");
+      timeoutError.status = 504;
+      throw timeoutError;
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function normalizeTourApiPlace(item = {}) {
+  const overview = normalizeTourApiOverview(item.overview);
+  return {
+    source: "tourApi",
+    externalId: String(item.contentid || ""),
+    contentTypeId: item.contenttypeid ? String(item.contenttypeid) : null,
+    name: item.title || "",
+    address: [item.addr1, item.addr2].filter(Boolean).join(" "),
+    areaCode: item.areacode || item.lDongRegnCd
+      ? String(item.areacode || item.lDongRegnCd)
+      : null,
+    sigunguCode: item.sigungucode || item.lDongSignguCd
+      ? String(item.sigungucode || item.lDongSignguCd)
+      : null,
+    coordinates: {
+      latitude: item.mapy ? Number(item.mapy) : null,
+      longitude: item.mapx ? Number(item.mapx) : null
+    },
+    thumbnail: item.firstimage2 || item.firstimage || null,
+    overview,
+    shortOverview: createTourApiShortOverview(overview)
+  };
+}
+
+function normalizeTourApiOverview(value) {
+  return String(value || "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p\s*>/gi, "\n")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;|&#160;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n\s*\n+/g, "\n\n")
+    .trim();
+}
+
+function createTourApiShortOverview(overview, maxLength = 220) {
+  const text = String(overview || "").replace(/\s+/g, " ").trim();
+  if (text.length <= maxLength) return text;
+  const shortened = text.slice(0, maxLength + 1);
+  const lastSpace = shortened.lastIndexOf(" ");
+  return `${shortened.slice(0, lastSpace > maxLength * 0.7 ? lastSpace : maxLength).trim()}…`;
+}
+
+const KORTRIP_REGION_BY_LEGAL_CODE = {
+  "11": { code: "SEOUL", name: "서울특별시" },
+  "26": { code: "GSBUSANDAEGUULSAN", name: "부산광역시" },
+  "27": { code: "GSBUSANDAEGUULSAN", name: "대구광역시" },
+  "28": { code: "GGICN", name: "인천광역시" },
+  "29": { code: "JRGWANGJU", name: "광주광역시" },
+  "30": { code: "CCDAEJEON", name: "대전광역시" },
+  "31": { code: "GSBUSANDAEGUULSAN", name: "울산광역시" },
+  "36": { code: "CCDAEJEON", name: "세종특별자치시" },
+  "41": { code: "GGICN", name: "경기도" },
+  "42": { code: "GANGWON", name: "강원특별자치도" },
+  "43": { code: "CCDAEJEON", name: "충청북도" },
+  "44": { code: "CCDAEJEON", name: "충청남도" },
+  "45": { code: "JRGWANGJU", name: "전북특별자치도" },
+  "46": { code: "JRGWANGJU", name: "전라남도" },
+  "47": { code: "GSBUSANDAEGUULSAN", name: "경상북도" },
+  "48": { code: "GSBUSANDAEGUULSAN", name: "경상남도" },
+  "50": { code: "JEJU", name: "제주특별자치도" },
+  "51": { code: "GANGWON", name: "강원특별자치도" },
+  "52": { code: "JRGWANGJU", name: "전북특별자치도" }
+};
+
+function inferPlaceType(contentTypeId) {
+  if (String(contentTypeId) === "32") return "lodging";
+  if (String(contentTypeId) === "39") return "restaurant";
+  return "attraction";
+}
+
+async function searchTourApiPlaces(keyword, limit = 5) {
+  const body = await requestTourApi("searchKeyword2", {
+    keyword,
+    numOfRows: String(limit),
+    pageNo: "1",
+    arrange: "A"
+  });
+  const items = body?.items?.item;
+  const list = Array.isArray(items) ? items : items ? [items] : [];
+  return {
+    totalCount: Number(body?.totalCount || 0),
+    items: list.map(normalizeTourApiPlace)
+  };
+}
+
+function normalizeTourApiImage(item = {}) {
+  return {
+    source: "tourApi",
+    contentId: String(item.contentid || ""),
+    serialNumber: item.serialnum ? String(item.serialnum) : null,
+    name: item.imgname || "",
+    originalUrl: item.originimgurl || null,
+    thumbnailUrl: item.smallimageurl || item.originimgurl || null,
+    copyrightType: item.cpyrhtDivCd || null,
+    license: item.cpyrhtDivCd === "Type1" ? "KOGL-1" : null,
+    provider: "한국관광공사 TourAPI"
+  };
+}
+
+async function getTourApiType1Images(contentId, limit = 20) {
+  const body = await requestTourApi("detailImage2", {
+    contentId,
+    numOfRows: String(limit),
+    pageNo: "1"
+  });
+  const items = body?.items?.item;
+  const list = Array.isArray(items) ? items : items ? [items] : [];
+  const type1Images = list
+    .filter(item => item?.cpyrhtDivCd === "Type1" && item?.originimgurl)
+    .map(normalizeTourApiImage);
+
+  return {
+    totalCount: Number(body?.totalCount || 0),
+    usableCount: type1Images.length,
+    items: type1Images
+  };
+}
+
+async function getTourApiPlaceDetail(contentId) {
+  const body = await requestTourApi("detailCommon2", {
+    contentId,
+    numOfRows: "1",
+    pageNo: "1"
+  });
+  const items = body?.items?.item;
+  const item = Array.isArray(items) ? items[0] : items;
+  return item ? normalizeTourApiPlace(item) : null;
+}
+
+function distanceInMeters(first, second) {
+  const toRadians = value => value * Math.PI / 180;
+  const lat1 = toRadians(first.latitude);
+  const lat2 = toRadians(second.latitude);
+  const deltaLat = lat2 - lat1;
+  const deltaLon = toRadians(second.longitude - first.longitude);
+  const value = Math.sin(deltaLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) ** 2;
+  return 6371000 * 2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value));
+}
+
+const ENGLISH_CONTENT_TYPE_BY_KOREAN = {
+  "12": "76", "14": "78", "15": "85", "25": "75",
+  "28": "77", "32": "80", "38": "79", "39": "82"
+};
+
+function koreanNameKey(value) {
+  return String(value || "")
+    .replace(/\[[^\]]*]/g, "")
+    .match(/[가-힣0-9]+/g)?.join("") || "";
+}
+
+async function getTourApiEnglishPlace(koreanPlace) {
+  const coordinates = koreanPlace?.coordinates;
+  if (coordinates?.latitude == null || coordinates?.longitude == null) return null;
+
+  try {
+    const targetName = koreanNameKey(koreanPlace.name);
+    if (!targetName) return null;
+    const body = await requestTourApi("searchKeyword2", {
+      keyword: targetName,
+      numOfRows: "30",
+      pageNo: "1",
+      arrange: "A"
+    }, TOUR_API_ENGLISH_BASE_URL);
+    const items = body?.items?.item;
+    const candidates = (Array.isArray(items) ? items : items ? [items] : [])
+      .map(normalizeTourApiPlace)
+      .filter(place => place.externalId &&
+        place.coordinates.latitude != null && place.coordinates.longitude != null)
+      .map(place => ({
+        place,
+        distance: distanceInMeters(coordinates, place.coordinates),
+        candidateName: koreanNameKey(place.name),
+        sameType: String(place.contentTypeId || "") ===
+          String(ENGLISH_CONTENT_TYPE_BY_KOREAN[String(koreanPlace.contentTypeId)] || "")
+      }))
+      .filter(candidate => candidate.distance <= 1000 && candidate.candidateName.includes(targetName))
+      .sort((first, second) =>
+        Number(second.candidateName === targetName) - Number(first.candidateName === targetName) ||
+        Number(second.sameType) - Number(first.sameType) ||
+        first.distance - second.distance
+      );
+
+    const match = candidates[0]?.place;
+    if (!match) return null;
+
+    const detailBody = await requestTourApi("detailCommon2", {
+      contentId: match.externalId,
+      numOfRows: "1",
+      pageNo: "1"
+    }, TOUR_API_ENGLISH_BASE_URL);
+    const detailItems = detailBody?.items?.item;
+    const detail = Array.isArray(detailItems) ? detailItems[0] : detailItems;
+    return detail ? normalizeTourApiPlace(detail) : null;
+  } catch (error) {
+    console.info(`TourAPI English data skipped (${error.tourApiCode || error.status || "unavailable"})`);
+    return null;
+  }
 }
 
 app.set("trust proxy", 1);
@@ -114,6 +388,143 @@ const Restaurant = createContentModel("Restaurant", "restaurants");
 const Lodging = createContentModel("Lodging", "lodgings");
 const Food = createContentModel("Food", "foods");
 const Collection = createContentModel("Collection", "collections");
+
+const externalPlaceImageSchema = new mongoose.Schema({
+  serialNumber: { type: String, default: null },
+  name: { type: String, default: "", maxlength: 300 },
+  originalUrl: { type: String, required: true },
+  thumbnailUrl: { type: String, required: true },
+  copyrightType: { type: String, enum: ["Type1"], required: true },
+  license: { type: String, enum: ["KOGL-1"], required: true },
+  provider: { type: String, default: "한국관광공사 TourAPI" }
+}, { _id: false });
+
+const externalPlaceSchema = new mongoose.Schema({
+  source: { type: String, enum: ["tourApi"], required: true },
+  externalId: { type: String, required: true, trim: true },
+  publicId: { type: Number, default: null },
+  status: { type: String, enum: ["draft", "published"], default: "draft" },
+  contentTypeId: { type: String, default: null },
+  placeType: {
+    type: String,
+    enum: ["attraction", "cafe", "restaurant", "lodging", "food"],
+    default: "attraction"
+  },
+  name: { type: String, required: true, trim: true, maxlength: 200 },
+  nameEn: { type: String, default: "", trim: true, maxlength: 200 },
+  address: { type: String, default: "", trim: true, maxlength: 500 },
+  addressEn: { type: String, default: "", trim: true, maxlength: 500 },
+  regionCode: { type: String, default: "", trim: true, maxlength: 40 },
+  regionName: { type: String, default: "", trim: true, maxlength: 100 },
+  shortDescription: { type: String, default: "", trim: true, maxlength: 500 },
+  shortDescriptionEn: { type: String, default: "", trim: true, maxlength: 500 },
+  description: { type: String, default: "", trim: true, maxlength: 5000 },
+  descriptionEn: { type: String, default: "", trim: true, maxlength: 5000 },
+  officialLinks: {
+    homepage: { type: String, default: "", trim: true, maxlength: 1000 },
+    instagram: { type: String, default: "", trim: true, maxlength: 1000 }
+  },
+  areaCode: { type: String, default: null },
+  sigunguCode: { type: String, default: null },
+  coordinates: {
+    latitude: { type: Number, default: null },
+    longitude: { type: Number, default: null }
+  },
+  selectedImage: { type: externalPlaceImageSchema, default: undefined },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }
+}, { collection: "external_places", versionKey: false, timestamps: true });
+
+externalPlaceSchema.index(
+  { source: 1, externalId: 1 },
+  { unique: true, name: "unique_external_place" }
+);
+externalPlaceSchema.index(
+  { publicId: 1 },
+  { unique: true, partialFilterExpression: { publicId: { $type: "number" } }, name: "unique_external_public_id" }
+);
+
+const ExternalPlace = mongoose.model("ExternalPlace", externalPlaceSchema);
+
+const EXTERNAL_PUBLIC_ID_OFFSET = 1_000_000_000;
+const EXTERNAL_REGION_LABELS = {
+  SEOUL: { ko: "서울", en: "Seoul" },
+  GGICN: { ko: "경기도 / 인천", en: "Gyeonggi / Incheon" },
+  GANGWON: { ko: "강원특별자치도", en: "Gangwon" },
+  CCDAEJEON: { ko: "충청도", en: "Chungcheong" },
+  GSBUSANDAEGUULSAN: { ko: "경상도", en: "Gyeongsang" },
+  JRGWANGJU: { ko: "전라도", en: "Jeolla" },
+  JEJU: { ko: "제주도", en: "Jeju Island" },
+  OTHER: { ko: "기타", en: "Other" }
+};
+
+function externalPublicId(externalId) {
+  const contentId = Number(externalId);
+  if (!Number.isSafeInteger(contentId) || contentId < 1) return null;
+  const publicId = EXTERNAL_PUBLIC_ID_OFFSET + contentId;
+  return Number.isSafeInteger(publicId) ? publicId : null;
+}
+
+function externalPlaceToPublic(place) {
+  if (!place) return null;
+  const publicId = place.publicId || externalPublicId(place.externalId);
+  const koName = place.name || "";
+  const enName = place.nameEn || koName;
+  const region = EXTERNAL_REGION_LABELS[place.regionCode] || EXTERNAL_REGION_LABELS.OTHER;
+  const koSummary = place.shortDescription || place.description || "";
+  const enSummary = place.shortDescriptionEn || koSummary;
+  const image = place.selectedImage || {};
+  const hasImage = Boolean(image.originalUrl || image.thumbnailUrl);
+
+  return {
+    id: publicId,
+    source: place.source,
+    externalId: place.externalId,
+    placeType: place.placeType,
+    visibility: place.status === "published",
+    img: {
+      link: image.thumbnailUrl || image.originalUrl || "",
+      originalUrl: image.originalUrl || image.thumbnailUrl || "",
+      direct: true
+    },
+    location: {
+      name: { ko: koName, en: enName },
+      region: { code: place.regionCode || "OTHER", ko: region.ko, en: region.en },
+      address: {
+        ko: place.address ? [place.address] : [],
+        en: place.addressEn ? [place.addressEn] : (place.address ? [place.address] : [])
+      },
+      coordinates: place.coordinates || {},
+      latLng: place.coordinates?.latitude != null && place.coordinates?.longitude != null
+        ? `${place.coordinates.latitude},${place.coordinates.longitude}`
+        : ""
+    },
+    description: {
+      short: { ko: koSummary, en: enSummary },
+      slide: { ko: koSummary, en: enSummary },
+      title: { ko: koName, en: enName },
+      detail: {
+        ko: place.description || koSummary,
+        en: place.descriptionEn || place.description || enSummary
+      }
+    },
+    attribution: hasImage ? {
+      provider: image.provider || "한국관광공사 TourAPI",
+      copyrightType: image.copyrightType || "Type1",
+      license: image.license || "KOGL-1"
+    } : null,
+    officialLinks: {
+      homepage: place.officialLinks?.homepage || "",
+      instagram: place.officialLinks?.instagram || ""
+    }
+  };
+}
+
+async function publishedExternalPlaces(placeType) {
+  if (!mongoReady) return [];
+  const places = await ExternalPlace.find({ placeType, status: "published" }).lean();
+  return places.map(externalPlaceToPublic).filter(place => place?.id);
+}
 
 // ----- Authentication schemas -----
 // Social providers are the source of identity. Passwords are never stored.
@@ -284,7 +695,8 @@ if (mongoReady) {
       Favorite.init(),
       Itinerary.init(),
       ItineraryImport.init(),
-      Visit.init()
+      Visit.init(),
+      ExternalPlace.init()
     ]);
     const existingImports = await Itinerary.find({ sourceItineraryId: { $ne: null } })
       .select("userId sourceItineraryId")
@@ -548,7 +960,7 @@ async function getSessionUser(req) {
   if (!session) return null;
 
   return User.findById(session.userId)
-    .select("displayName accounts.provider createdAt")
+    .select("displayName accounts.provider accounts.providerUserId createdAt")
     .lean();
 }
 
@@ -561,6 +973,26 @@ async function requireAuth(req, res, next) {
   } catch (error) {
     return next(error);
   }
+}
+
+function isOperatorUser(user) {
+  return Boolean(user?.accounts?.some(account => {
+    const isConfiguredOperator =
+      account.provider === OPERATOR_PROVIDER &&
+      account.providerUserId === OPERATOR_PROVIDER_USER_ID;
+    const isDevelopmentOperator =
+      DEV_LOGIN_ENABLED &&
+      account.provider === "dev" &&
+      account.providerUserId === process.env.DEV_LOGIN_ID;
+    return isConfiguredOperator || isDevelopmentOperator;
+  }));
+}
+
+function requireOperator(req, res, next) {
+  if (!isOperatorUser(req.user)) {
+    return res.status(403).json({ error: "Operator access required" });
+  }
+  return next();
 }
 
 const placeModelByType = {
@@ -589,17 +1021,26 @@ function parsePlaceReference(value = {}) {
 }
 
 async function findVisiblePlace(placeType, placeId) {
+  let place = null;
   if (USE_LOCAL_DB) {
     const collection = placeCollectionByType[placeType];
     if (!collection) return null;
-    return localDB?.[collection]?.find(
+    place = localDB?.[collection]?.find(
       place => place.id === placeId && place.visibility !== false
     ) || null;
+  } else {
+    const model = placeModelByType[placeType];
+    if (!model) return null;
+    place = await model.findOne({ id: placeId, visibility: { $ne: false } }).lean();
   }
 
-  const model = placeModelByType[placeType];
-  if (!model) return null;
-  return model.findOne({ id: placeId, visibility: { $ne: false } }).lean();
+  if (place || !mongoReady) return place;
+  const external = await ExternalPlace.findOne({
+    publicId: placeId,
+    placeType,
+    status: "published"
+  }).lean();
+  return externalPlaceToPublic(external);
 }
 
 function placeSummary(placeType, place) {
@@ -607,6 +1048,7 @@ function placeSummary(placeType, place) {
   return {
     placeType,
     placeId: place.id,
+    source: place.source || "kortrip",
     location: place.location,
     img: place.img,
     description: {
@@ -631,31 +1073,40 @@ function matchesPlaceSearch(place, query) {
 }
 
 async function searchVisiblePlaces(query, limit = 100) {
+  let internalPlaces;
   if (USE_LOCAL_DB) {
-    return Object.entries(placeCollectionByType)
+    internalPlaces = Object.entries(placeCollectionByType)
       .flatMap(([placeType, collection]) => (localDB?.[collection] || [])
         .filter(place => place.visibility !== false && matchesPlaceSearch(place, query))
-        .map(place => placeSummary(placeType, place)))
-      .slice(0, limit);
+        .map(place => placeSummary(placeType, place)));
+  } else {
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const filter = {
+      visibility: { $ne: false },
+      ...(query ? { $or: [
+        { "location.name.ko": { $regex: escapedQuery, $options: "i" } },
+        { "location.name.en": { $regex: escapedQuery, $options: "i" } },
+        { "location.region.ko": { $regex: escapedQuery, $options: "i" } },
+        { "location.region.en": { $regex: escapedQuery, $options: "i" } },
+        { "location.address.ko": { $regex: escapedQuery, $options: "i" } },
+        { "location.address.en": { $regex: escapedQuery, $options: "i" } }
+      ] } : {})
+    };
+    const groups = await Promise.all(Object.entries(placeModelByType).map(
+      async ([placeType, model]) => (await model.find(filter).limit(limit).lean())
+        .map(place => placeSummary(placeType, place))
+    ));
+    internalPlaces = groups.flat();
   }
 
-  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const filter = {
-    visibility: { $ne: false },
-    ...(query ? { $or: [
-      { "location.name.ko": { $regex: escapedQuery, $options: "i" } },
-      { "location.name.en": { $regex: escapedQuery, $options: "i" } },
-      { "location.region.ko": { $regex: escapedQuery, $options: "i" } },
-      { "location.region.en": { $regex: escapedQuery, $options: "i" } },
-      { "location.address.ko": { $regex: escapedQuery, $options: "i" } },
-      { "location.address.en": { $regex: escapedQuery, $options: "i" } }
-    ] } : {})
-  };
-  const groups = await Promise.all(Object.entries(placeModelByType).map(
-    async ([placeType, model]) => (await model.find(filter).limit(limit).lean())
-      .map(place => placeSummary(placeType, place))
-  ));
-  return groups.flat().slice(0, limit);
+  const externalPlaces = mongoReady
+    ? (await ExternalPlace.find({ status: "published" }).limit(limit).lean())
+      .map(externalPlaceToPublic)
+      .filter(place => place && matchesPlaceSearch(place, query))
+      .map(place => placeSummary(place.placeType, place))
+    : [];
+
+  return [...internalPlaces, ...externalPlaces].slice(0, limit);
 }
 
 async function validatePlaceReferences(references) {
@@ -825,6 +1276,336 @@ function parseVisitPayload(body = {}, partial = false) {
 
 app.get("/health", (req, res) => {
   res.json({ ok: true });
+});
+
+app.get("/tour-api/test", async (req, res, next) => {
+  if (IS_PRODUCTION || !USE_LOCAL_DB || !isPrivateRequest(req)) {
+    return res.status(404).json({ error: "Not found" });
+  }
+
+  try {
+    const keyword = typeof req.query.keyword === "string"
+      ? req.query.keyword.trim().slice(0, 50)
+      : "경복궁";
+    if (keyword.length < 2) {
+      return res.status(400).json({ error: "Keyword must be at least 2 characters" });
+    }
+    return res.json(await searchTourApiPlaces(keyword));
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.get("/tour-api/test/:contentId/images", async (req, res, next) => {
+  if (IS_PRODUCTION || !USE_LOCAL_DB || !isPrivateRequest(req)) {
+    return res.status(404).json({ error: "Not found" });
+  }
+
+  try {
+    const contentId = String(req.params.contentId || "").trim();
+    if (!/^\d{1,20}$/.test(contentId)) {
+      return res.status(400).json({ error: "Invalid TourAPI content ID" });
+    }
+    return res.json(await getTourApiType1Images(contentId));
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.get("/operator/tour-api/places", requireAuth, requireOperator, async (req, res, next) => {
+  try {
+    const keyword = typeof req.query.keyword === "string"
+      ? req.query.keyword.trim().slice(0, 50)
+      : "";
+    if (keyword.length < 2) {
+      return res.status(400).json({ error: "Keyword must be at least 2 characters" });
+    }
+    return res.json(await searchTourApiPlaces(keyword, 12));
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.get(
+  "/operator/tour-api/places/:contentId/images",
+  requireAuth,
+  requireOperator,
+  async (req, res, next) => {
+    try {
+      const contentId = String(req.params.contentId || "").trim();
+      if (!/^\d{1,20}$/.test(contentId)) {
+        return res.status(400).json({ error: "Invalid TourAPI content ID" });
+      }
+      return res.json(await getTourApiType1Images(contentId));
+    } catch (error) {
+      return next(error);
+    }
+  }
+);
+
+app.post(
+  "/operator/tour-api/places/:contentId/draft",
+  requireAuth,
+  requireOperator,
+  async (req, res, next) => {
+    try {
+      if (!mongoReady) {
+        return res.status(503).json({ error: "Database is not available" });
+      }
+
+      const contentId = String(req.params.contentId || "").trim();
+      const serialNumber = typeof req.body?.serialNumber === "string"
+        ? req.body.serialNumber.trim()
+        : "";
+      const withoutImage = req.body?.withoutImage === true;
+      if (!/^\d{1,20}$/.test(contentId) || (!serialNumber && !withoutImage)) {
+        return res.status(400).json({ error: "Invalid TourAPI place or image" });
+      }
+
+      const [place, imageResult] = await Promise.all([
+        getTourApiPlaceDetail(contentId),
+        serialNumber ? getTourApiType1Images(contentId, 50) : Promise.resolve({ items: [] })
+      ]);
+      const selectedImage = serialNumber
+        ? imageResult.items.find(image => image.serialNumber === serialNumber)
+        : null;
+      if (!place || (serialNumber && !selectedImage)) {
+        return res.status(400).json({ error: "Verified TourAPI place or Type1 image not found" });
+      }
+      const englishPlace = await getTourApiEnglishPlace(place);
+      const region = KORTRIP_REGION_BY_LEGAL_CODE[place.areaCode] || {
+        code: "OTHER",
+        name: place.address.split(" ")[0] || ""
+      };
+      const existing = await ExternalPlace.findOne({ source: "tourApi", externalId: contentId })
+        .select("status nameEn addressEn shortDescription description shortDescriptionEn descriptionEn")
+        .lean();
+      const importedFields = existing?.status === "published" ? {} : {
+        contentTypeId: place.contentTypeId,
+        placeType: inferPlaceType(place.contentTypeId),
+        name: place.name,
+        address: place.address,
+        areaCode: place.areaCode,
+        sigunguCode: place.sigunguCode,
+        regionCode: region.code,
+        regionName: region.name,
+        coordinates: place.coordinates,
+        ...(!existing?.shortDescription?.trim() && place.shortOverview
+          ? { shortDescription: place.shortOverview }
+          : {}),
+        ...(!existing?.description?.trim() && place.overview
+          ? { description: place.overview }
+          : {}),
+        ...(!existing?.nameEn?.trim() && englishPlace?.name
+          ? { nameEn: englishPlace.name }
+          : {}),
+        ...(!existing?.addressEn?.trim() && englishPlace?.address
+          ? { addressEn: englishPlace.address }
+          : {}),
+        ...(!existing?.shortDescriptionEn?.trim() && englishPlace?.shortOverview
+          ? { shortDescriptionEn: englishPlace.shortOverview }
+          : {}),
+        ...(!existing?.descriptionEn?.trim() && englishPlace?.overview
+          ? { descriptionEn: englishPlace.overview }
+          : {})
+      };
+
+      const draftUpdate = {
+        $set: {
+          status: existing?.status || "draft",
+          ...importedFields,
+          ...(selectedImage ? { selectedImage } : {}),
+          updatedBy: req.user._id
+        },
+        $setOnInsert: {
+          source: "tourApi",
+          externalId: contentId,
+          createdBy: req.user._id
+        }
+      };
+      if (!selectedImage) draftUpdate.$unset = { selectedImage: 1 };
+      const draft = await ExternalPlace.findOneAndUpdate(
+        { source: "tourApi", externalId: contentId },
+        draftUpdate,
+        { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+      ).lean();
+
+      return res.status(201).json({
+        id: draft._id,
+        source: draft.source,
+        externalId: draft.externalId,
+        status: draft.status,
+        name: draft.name,
+        selectedImage: draft.selectedImage,
+        updatedAt: draft.updatedAt
+      });
+    } catch (error) {
+      return next(error);
+    }
+  }
+);
+
+app.get("/operator/external-places", requireAuth, requireOperator, async (req, res, next) => {
+  try {
+    if (!mongoReady) return res.status(503).json({ error: "Database is not available" });
+    const drafts = await ExternalPlace.find({ status: { $in: ["draft", "published"] } })
+      .sort({ updatedAt: -1 })
+      .lean();
+    return res.json(drafts.map(draft => {
+      if (!draft.selectedImage?.originalUrl) delete draft.selectedImage;
+      return draft;
+    }));
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.patch("/operator/external-places/:id", requireAuth, requireOperator, async (req, res, next) => {
+  try {
+    if (!mongoReady) return res.status(503).json({ error: "Database is not available" });
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ error: "Invalid draft ID" });
+    }
+
+    const allowed = {
+      placeType: req.body?.placeType,
+      name: req.body?.name,
+      nameEn: req.body?.nameEn,
+      address: req.body?.address,
+      addressEn: req.body?.addressEn,
+      regionCode: req.body?.regionCode,
+      shortDescription: req.body?.shortDescription,
+      shortDescriptionEn: req.body?.shortDescriptionEn,
+      description: req.body?.description,
+      descriptionEn: req.body?.descriptionEn
+    };
+    const updates = Object.fromEntries(
+      Object.entries(allowed).filter(([, value]) => typeof value === "string")
+    );
+    if (!Object.keys(updates).length) {
+      return res.status(400).json({ error: "No editable fields supplied" });
+    }
+    if (updates.regionCode && !EXTERNAL_REGION_LABELS[updates.regionCode]) {
+      return res.status(400).json({ error: "Invalid region code" });
+    }
+    const officialLinks = {
+      homepage: req.body?.homepage,
+      instagram: req.body?.instagram
+    };
+    for (const [type, value] of Object.entries(officialLinks)) {
+      if (typeof value !== "string") continue;
+      const trimmed = value.trim();
+      if (trimmed) {
+        try {
+          const url = new URL(trimmed);
+          if (!['http:', 'https:'].includes(url.protocol)) throw new Error("Invalid protocol");
+        } catch {
+          return res.status(400).json({ error: `${type} 링크는 http 또는 https 전체 주소로 입력하세요` });
+        }
+      }
+      updates[`officialLinks.${type}`] = trimmed;
+    }
+    updates.updatedBy = req.user._id;
+
+    const existing = await ExternalPlace.findById(req.params.id)
+      .select("selectedImage.originalUrl")
+      .lean();
+    const updateOperation = { $set: updates };
+    if (existing?.selectedImage && !existing.selectedImage.originalUrl) {
+      updateOperation.$unset = { selectedImage: 1 };
+    }
+    const draft = await ExternalPlace.findOneAndUpdate(
+      { _id: req.params.id, status: { $in: ["draft", "published"] } },
+      updateOperation,
+      { new: true, runValidators: true }
+    ).lean();
+    if (!draft) return res.status(404).json({ error: "Place not found" });
+    return res.json(draft);
+  } catch (error) {
+    if (error?.name === "ValidationError") {
+      return res.status(400).json({ error: "Invalid draft data" });
+    }
+    return next(error);
+  }
+});
+
+app.delete("/operator/external-places/:id", requireAuth, requireOperator, async (req, res, next) => {
+  try {
+    if (!mongoReady) return res.status(503).json({ error: "Database is not available" });
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ error: "Invalid place ID" });
+    }
+
+    const place = await ExternalPlace.findByIdAndDelete(req.params.id).lean();
+    if (!place) return res.status(404).json({ error: "Place not found" });
+    return res.json({
+      deleted: true,
+      id: place._id,
+      publicId: place.publicId,
+      name: place.name,
+      status: place.status
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.post("/operator/external-places/:id/publish", requireAuth, requireOperator, async (req, res, next) => {
+  try {
+    if (!mongoReady) return res.status(503).json({ error: "Database is not available" });
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ error: "Invalid draft ID" });
+    }
+
+    const draft = await ExternalPlace.findOne({ _id: req.params.id, status: "draft" });
+    if (!draft) return res.status(404).json({ error: "Draft not found" });
+
+    const missing = [];
+    if (!draft.name?.trim()) missing.push("한국어 이름");
+    if (!draft.nameEn?.trim()) missing.push("영어 이름");
+    if (!draft.address?.trim()) missing.push("한국어 주소");
+    if (!draft.addressEn?.trim()) missing.push("영어 주소");
+    if (!EXTERNAL_REGION_LABELS[draft.regionCode]) missing.push("지역");
+    if (!draft.shortDescription?.trim()) missing.push("한국어 짧은 소개");
+    if (!draft.shortDescriptionEn?.trim()) missing.push("영어 짧은 소개");
+    if (!draft.description?.trim()) missing.push("한국어 상세 설명");
+    if (!draft.descriptionEn?.trim()) missing.push("영어 상세 설명");
+    if (missing.length) {
+      return res.status(400).json({ error: `공개 전 필수 항목을 입력하세요: ${missing.join(", ")}` });
+    }
+
+    if (draft.selectedImage && !draft.selectedImage.originalUrl) {
+      draft.selectedImage = undefined;
+    }
+
+    const publicId = externalPublicId(draft.externalId);
+    if (!publicId) return res.status(400).json({ error: "TourAPI ID로 공개 ID를 만들 수 없습니다" });
+
+    draft.publicId = publicId;
+    draft.status = "published";
+    draft.updatedBy = req.user._id;
+    await draft.save();
+    return res.json({ id: publicId, status: draft.status, place: externalPlaceToPublic(draft.toObject()) });
+  } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(409).json({ error: "이미 같은 공개 ID를 사용하는 장소가 있습니다" });
+    }
+    return next(error);
+  }
+});
+
+app.get("/external-places/:id", async (req, res, next) => {
+  try {
+    if (!mongoReady) return res.status(503).json({ error: "Database is not available" });
+    const publicId = Number(req.params.id);
+    if (!Number.isSafeInteger(publicId) || publicId < 1) {
+      return res.status(400).json({ error: "Invalid place ID" });
+    }
+    const place = await ExternalPlace.findOne({ publicId, status: "published" }).lean();
+    return place ? res.json(externalPlaceToPublic(place)) : res.status(404).json({ error: "Place not found" });
+  } catch (error) {
+    return next(error);
+  }
 });
 
 app.get("/places/search", async (req, res, next) => {
@@ -1064,7 +1845,8 @@ app.get("/auth/session", async (req, res, next) => {
       user: {
         id: user._id,
         displayName: user.displayName,
-        providers: user.accounts.map(account => account.provider)
+        providers: user.accounts.map(account => account.provider),
+        isOperator: isOperatorUser(user)
       }
     });
   } catch (error) {
@@ -1102,7 +1884,12 @@ app.post("/auth/dev-login", async (req, res, next) => {
     res.cookie(SESSION_COOKIE_NAME, sessionToken, sessionCookieOptions());
     return res.json({
       authenticated: true,
-      user: { id: user._id, displayName: user.displayName, providers: ["dev"] }
+      user: {
+        id: user._id,
+        displayName: user.displayName,
+        providers: ["dev"],
+        isOperator: isOperatorUser(user)
+      }
     });
   } catch (error) {
     return next(error);
@@ -1703,10 +2490,8 @@ app.get("/blogs/:id", async (req, res) => {
 });
 
 app.get("/rankings", async (req, res) => {
-  if (USE_LOCAL_DB) {
-    return res.json(await attachRatingSummaries("attraction", localDB.rankings));
-  }
-  const data = await Ranking.find({}).lean();
+  const stored = USE_LOCAL_DB ? localDB.rankings : await Ranking.find({}).lean();
+  const data = [...stored, ...await publishedExternalPlaces("attraction")];
   res.json(await attachRatingSummaries("attraction", data));
 });
 
@@ -1730,10 +2515,8 @@ app.get("/seasons", async (req, res) => {
 
 
 app.get("/cafes", async (req, res) => {
-  if (USE_LOCAL_DB) {
-    return res.json(await attachRatingSummaries("cafe", localDB.cafes));
-  }
-  const data = await Cafe.find({}).lean();
+  const stored = USE_LOCAL_DB ? localDB.cafes : await Cafe.find({}).lean();
+  const data = [...stored, ...await publishedExternalPlaces("cafe")];
   res.json(await attachRatingSummaries("cafe", data));
 });
 
@@ -1748,10 +2531,8 @@ app.get("/cafes/:id", async (req, res) => {
 
 
 app.get("/restaurants", async (req, res) => {
-  if (USE_LOCAL_DB) {
-    return res.json(await attachRatingSummaries("restaurant", localDB.restaurants));
-  }
-  const data = await Restaurant.find({}).lean();
+  const stored = USE_LOCAL_DB ? localDB.restaurants : await Restaurant.find({}).lean();
+  const data = [...stored, ...await publishedExternalPlaces("restaurant")];
   res.json(await attachRatingSummaries("restaurant", data));
 });
 
@@ -1766,10 +2547,8 @@ app.get("/restaurants/:id", async (req, res) => {
 
 
 app.get("/lodgings", async (req, res) => {
-  if (USE_LOCAL_DB) {
-    return res.json(await attachRatingSummaries("lodging", localDB.lodgings));
-  }
-  const data = await Lodging.find({}).lean();
+  const stored = USE_LOCAL_DB ? localDB.lodgings : await Lodging.find({}).lean();
+  const data = [...stored, ...await publishedExternalPlaces("lodging")];
   res.json(await attachRatingSummaries("lodging", data));
 });
 
@@ -1783,10 +2562,8 @@ app.get("/lodgings/:id", async (req, res) => {
 });
 
 app.get("/foods", async (req, res) => {
-  if (USE_LOCAL_DB) {
-    return res.json(await attachRatingSummaries("food", localDB.foods));
-  }
-  const data = await Food.find({}).lean();
+  const stored = USE_LOCAL_DB ? localDB.foods : await Food.find({}).lean();
+  const data = [...stored, ...await publishedExternalPlaces("food")];
   res.json(await attachRatingSummaries("food", data));
 });
 
