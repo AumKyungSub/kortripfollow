@@ -609,6 +609,8 @@ const itineraryDaySchema = new mongoose.Schema({
 const scheduleItemSchema = new mongoose.Schema({
   time: { type: String, required: true, trim: true, maxlength: 5 },
   title: { type: String, required: true, trim: true, maxlength: 120 },
+  placeType: { type: String, enum: PLACE_TYPES },
+  placeId: { type: Number, min: 1 },
   memo: { type: String, default: "", trim: true, maxlength: 500 }
 }, { versionKey: false });
 
@@ -634,6 +636,7 @@ const itinerarySchema = new mongoose.Schema({
   description: { type: String, default: "", trim: true, maxlength: 2000 },
   visibility: { type: String, enum: VISIBILITY_TYPES, default: "private" },
   days: { type: [itineraryDaySchema], default: [] },
+  visitPlan: { type: [itineraryPlaceSchema], default: [] },
   schedule: { type: [scheduleDaySchema], default: [] },
   checklist: { type: [checklistItemSchema], default: [] },
   editorIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
@@ -1143,6 +1146,10 @@ async function attachItineraryPlaces(document) {
       return { ...reference, place: placeSummary(reference.placeType, place) };
     }))
   })));
+  const visitPlan = await Promise.all((item.visitPlan || []).map(async reference => {
+    const place = await findVisiblePlace(reference.placeType, reference.placeId);
+    return { ...reference, place: placeSummary(reference.placeType, place) };
+  }));
   const editors = item.editorIds?.length
     ? await User.find({ _id: { $in: item.editorIds } })
         .select("displayName accounts.email")
@@ -1152,6 +1159,7 @@ async function attachItineraryPlaces(document) {
   return {
     ...item,
     days,
+    visitPlan,
     hasEditPassword,
     owner: owner ? { _id: owner._id, displayName: owner.displayName } : null,
     editors: editors.map(editor => ({
@@ -1236,16 +1244,30 @@ function parseItineraryPayload(body = {}, partial = false) {
         }))
       : body.days;
   }
+  if (!partial || body.visitPlan !== undefined) {
+    payload.visitPlan = Array.isArray(body.visitPlan)
+      ? body.visitPlan.map((place, index) => ({
+          placeType: place?.placeType,
+          placeId: Number(place?.placeId),
+          order: index,
+          memo: place?.memo ?? ""
+        }))
+      : body.visitPlan;
+  }
   if (!partial || body.schedule !== undefined) {
     payload.schedule = Array.isArray(body.schedule)
       ? body.schedule.map(day => ({
           date: day?.date,
-          items: Array.isArray(day?.items) ? day.items.map(item => ({
-            ...((item?._id && mongoose.isValidObjectId(item._id)) ? { _id: item._id } : {}),
-            time: item?.time,
-            title: item?.title,
-            memo: item?.memo ?? ""
-          })) : []
+          items: Array.isArray(day?.items) ? day.items.map(item => {
+            const place = parsePlaceReference(item);
+            return {
+              ...((item?._id && mongoose.isValidObjectId(item._id)) ? { _id: item._id } : {}),
+              time: item?.time,
+              title: item?.title,
+              ...(place || {}),
+              memo: item?.memo ?? ""
+            };
+          }) : []
         }))
       : body.schedule;
   }
@@ -2194,6 +2216,12 @@ app.post("/itineraries/:id/copy", requireAuth, async (req, res, next) => {
           memo: place.memo || ""
         }))
       })),
+      visitPlan: (source.visitPlan || []).map((place, order) => ({
+        placeType: place.placeType,
+        placeId: place.placeId,
+        order,
+        memo: place.memo || ""
+      })),
       schedule: (source.schedule || []).map(day => ({
         date: day.date,
         items: (day.items || []).map(item => ({
@@ -2260,7 +2288,7 @@ app.patch("/itineraries/:id", requireAuth, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: "Itinerary not found" });
     const payload = parseItineraryPayload(req.body, true);
-    const existing = await Itinerary.findById(req.params.id).select("userId editorIds");
+    const existing = await Itinerary.findById(req.params.id).select("userId editorIds days visitPlan schedule");
     if (!existing) return res.status(404).json({ error: "Itinerary not found" });
     const isOwner = existing.userId.equals(req.user._id);
     const isEditor = existing.editorIds?.some(id => id.equals(req.user._id));
@@ -2272,6 +2300,40 @@ app.patch("/itineraries/:id", requireAuth, async (req, res, next) => {
       if (!Array.isArray(payload.days) || !await validatePlaceReferences(references)) {
         return res.status(400).json({ error: "Invalid place reference" });
       }
+    }
+    if (payload.visitPlan !== undefined) {
+      if (!Array.isArray(payload.visitPlan) || !await validatePlaceReferences(payload.visitPlan)) {
+        return res.status(400).json({ error: "Invalid visit plan" });
+      }
+      const availablePlaces = payload.days !== undefined ? payload.days : existing.days;
+      const availableKeys = new Set((availablePlaces || []).flatMap(day => day.places || []).map(place => `${place.placeType}:${place.placeId}`));
+      if (payload.visitPlan.some(place => !availableKeys.has(`${place.placeType}:${place.placeId}`))) {
+        return res.status(400).json({ error: "Visit plan places must belong to the itinerary" });
+      }
+    } else if (payload.days !== undefined) {
+      const availableKeys = new Set(payload.days.flatMap(day => day.places || []).map(place => `${place.placeType}:${place.placeId}`));
+      payload.visitPlan = (existing.visitPlan || []).filter(place => availableKeys.has(`${place.placeType}:${place.placeId}`));
+    }
+    const effectiveVisitPlan = payload.visitPlan !== undefined ? payload.visitPlan : existing.visitPlan;
+    const visitPlanKeys = new Set((effectiveVisitPlan || []).map(place => `${place.placeType}:${place.placeId}`));
+    if (payload.schedule !== undefined) {
+      if (!Array.isArray(payload.schedule)) {
+        return res.status(400).json({ error: "Invalid schedule" });
+      }
+      const schedulePlaces = payload.schedule.flatMap(day => day.items || []).filter(item => item.placeType && item.placeId);
+      if (!await validatePlaceReferences(schedulePlaces) || schedulePlaces.some(place => !visitPlanKeys.has(`${place.placeType}:${place.placeId}`))) {
+        return res.status(400).json({ error: "Schedule places must belong to the visit plan" });
+      }
+    } else if (payload.visitPlan !== undefined) {
+      payload.schedule = (existing.schedule || []).map(day => ({
+        date: day.date,
+        items: (day.items || []).map(item => {
+          const value = item.toObject ? item.toObject() : item;
+          return value.placeType && !visitPlanKeys.has(`${value.placeType}:${value.placeId}`)
+            ? { ...value, placeType: undefined, placeId: undefined }
+            : value;
+        })
+      }));
     }
     const itinerary = await Itinerary.findOneAndUpdate(
       { _id: req.params.id },
