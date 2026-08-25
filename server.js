@@ -602,6 +602,7 @@ const itineraryPlaceSchema = new mongoose.Schema({
 
 const itineraryDaySchema = new mongoose.Schema({
   date: { type: Date, default: null },
+  dayNumber: { type: Number, min: 1, max: 31, default: null },
   title: { type: String, default: "", trim: true, maxlength: 100 },
   places: { type: [itineraryPlaceSchema], default: [] }
 }, { _id: false });
@@ -615,7 +616,8 @@ const scheduleItemSchema = new mongoose.Schema({
 }, { versionKey: false });
 
 const scheduleDaySchema = new mongoose.Schema({
-  date: { type: Date, required: true },
+  date: { type: Date, default: null },
+  dayNumber: { type: Number, min: 1, max: 31, default: null },
   items: { type: [scheduleItemSchema], default: [] }
 }, { versionKey: false });
 
@@ -635,6 +637,8 @@ const itinerarySchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true, maxlength: 100 },
   description: { type: String, default: "", trim: true, maxlength: 2000 },
   visibility: { type: String, enum: VISIBILITY_TYPES, default: "private" },
+  dateMode: { type: String, enum: ["fixed", "flexible"], default: "fixed" },
+  durationDays: { type: Number, min: 1, default: 1 },
   days: { type: [itineraryDaySchema], default: [] },
   visitPlan: { type: [itineraryPlaceSchema], default: [] },
   schedule: { type: [scheduleDaySchema], default: [] },
@@ -1228,10 +1232,13 @@ function parseItineraryPayload(body = {}, partial = false) {
   if (!partial || body.title !== undefined) payload.title = body.title;
   if (!partial || body.description !== undefined) payload.description = body.description ?? "";
   if (!partial || body.visibility !== undefined) payload.visibility = body.visibility ?? "private";
+  if (!partial || body.dateMode !== undefined) payload.dateMode = body.dateMode ?? "fixed";
+  if (!partial || body.durationDays !== undefined) payload.durationDays = Number(body.durationDays ?? 1);
   if (!partial || body.days !== undefined) {
     payload.days = Array.isArray(body.days)
       ? body.days.map(day => ({
           date: day?.date || null,
+          dayNumber: day?.dayNumber ? Number(day.dayNumber) : null,
           title: day?.title ?? "",
           places: Array.isArray(day?.places)
             ? day.places.map((place, index) => ({
@@ -1257,7 +1264,8 @@ function parseItineraryPayload(body = {}, partial = false) {
   if (!partial || body.schedule !== undefined) {
     payload.schedule = Array.isArray(body.schedule)
       ? body.schedule.map(day => ({
-          date: day?.date,
+          date: day?.date || null,
+          dayNumber: day?.dayNumber ? Number(day.dayNumber) : null,
           items: Array.isArray(day?.items) ? day.items.map(item => {
             const place = parsePlaceReference(item);
             return {
@@ -2074,6 +2082,12 @@ app.delete("/favorites/:placeType/:placeId", requireAuth, async (req, res, next)
 app.post("/itineraries", requireAuth, async (req, res, next) => {
   try {
     const payload = parseItineraryPayload(req.body);
+    if (
+      payload.dateMode === "flexible" &&
+      (!Number.isInteger(payload.durationDays) || payload.durationDays < 1 || payload.durationDays > 31)
+    ) {
+      return res.status(400).json({ error: "Flexible itinerary must be between 1 and 31 days" });
+    }
     const editPassword = req.body?.editPassword;
     if (editPassword && !validEditPassword(editPassword)) {
       return res.status(400).json({ error: "Edit password must be 4 to 32 characters" });
@@ -2160,7 +2174,7 @@ app.get("/itineraries/public", async (req, res, next) => {
         : {})
     };
     let itineraries = await Itinerary.find(filter)
-      .select("userId title description visibility days importCount operatorRecommended createdAt updatedAt")
+      .select("userId title description visibility dateMode durationDays days importCount operatorRecommended createdAt updatedAt")
       .sort(category === "popular" ? { importCount: -1 } : { updatedAt: -1 })
       .lean();
     if (category === "popular") {
@@ -2206,8 +2220,11 @@ app.post("/itineraries/:id/copy", requireAuth, async (req, res, next) => {
       title: source.title,
       description: source.description || "",
       visibility: "unlisted",
+      dateMode: source.dateMode || "fixed",
+      durationDays: source.durationDays || 1,
       days: (source.days || []).map(day => ({
         date: day.date || null,
+        dayNumber: day.dayNumber || null,
         title: day.title || "",
         places: (day.places || []).map((place, order) => ({
           placeType: place.placeType,
@@ -2223,7 +2240,8 @@ app.post("/itineraries/:id/copy", requireAuth, async (req, res, next) => {
         memo: place.memo || ""
       })),
       schedule: (source.schedule || []).map(day => ({
-        date: day.date,
+        date: day.date || null,
+        dayNumber: day.dayNumber || null,
         items: (day.items || []).map(item => ({
           time: item.time,
           title: item.title,
@@ -2288,11 +2306,19 @@ app.patch("/itineraries/:id", requireAuth, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: "Itinerary not found" });
     const payload = parseItineraryPayload(req.body, true);
-    const existing = await Itinerary.findById(req.params.id).select("userId editorIds days visitPlan schedule");
+    const existing = await Itinerary.findById(req.params.id).select("userId editorIds dateMode durationDays days visitPlan schedule");
     if (!existing) return res.status(404).json({ error: "Itinerary not found" });
     const isOwner = existing.userId.equals(req.user._id);
     const isEditor = existing.editorIds?.some(id => id.equals(req.user._id));
     if (!isOwner && !isEditor) return res.status(404).json({ error: "Itinerary not found" });
+    const effectiveDateMode = payload.dateMode ?? existing.dateMode ?? "fixed";
+    const effectiveDurationDays = payload.durationDays ?? existing.durationDays ?? 1;
+    if (
+      effectiveDateMode === "flexible" &&
+      (!Number.isInteger(effectiveDurationDays) || effectiveDurationDays < 1 || effectiveDurationDays > 31)
+    ) {
+      return res.status(400).json({ error: "Flexible itinerary must be between 1 and 31 days" });
+    }
     if (!isOwner) delete payload.visibility;
     delete payload.checklist;
     if (payload.days !== undefined) {
@@ -2326,7 +2352,8 @@ app.patch("/itineraries/:id", requireAuth, async (req, res, next) => {
       }
     } else if (payload.visitPlan !== undefined) {
       payload.schedule = (existing.schedule || []).map(day => ({
-        date: day.date,
+        date: day.date || null,
+        dayNumber: day.dayNumber || null,
         items: (day.items || []).map(item => {
           const value = item.toObject ? item.toObject() : item;
           return value.placeType && !visitPlanKeys.has(`${value.placeType}:${value.placeId}`)
