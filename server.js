@@ -387,6 +387,10 @@ const Cafe = createContentModel("Cafe", "cafes");
 const Restaurant = createContentModel("Restaurant", "restaurants");
 const Lodging = createContentModel("Lodging", "lodgings");
 const Food = createContentModel("Food", "foods");
+const Market = createContentModel("Market", "markets");
+const Park = createContentModel("Park", "parks");
+const Ocean = createContentModel("Ocean", "oceans");
+const Drive = createContentModel("Drive", "drives");
 const Collection = createContentModel("Collection", "collections");
 
 const externalPlaceImageSchema = new mongoose.Schema({
@@ -407,7 +411,7 @@ const externalPlaceSchema = new mongoose.Schema({
   contentTypeId: { type: String, default: null },
   placeType: {
     type: String,
-    enum: ["attraction", "cafe", "restaurant", "lodging", "food"],
+    enum: ["attraction", "cafe", "restaurant", "lodging", "food", "market", "park", "ocean", "drive"],
     default: "attraction"
   },
   name: { type: String, required: true, trim: true, maxlength: 200 },
@@ -569,7 +573,7 @@ sessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0, name: "expire_ses
 const User = mongoose.model("User", userSchema);
 const Session = mongoose.model("Session", sessionSchema);
 
-const PLACE_TYPES = ["attraction", "cafe", "restaurant", "lodging", "food"];
+const PLACE_TYPES = ["attraction", "cafe", "restaurant", "lodging", "food", "market", "park", "ocean", "drive"];
 const VISIBILITY_TYPES = ["private", "unlisted", "public"];
 
 const placeReferenceFields = {
@@ -1009,7 +1013,11 @@ const placeModelByType = {
   cafe: Cafe,
   restaurant: Restaurant,
   lodging: Lodging,
-  food: Food
+  food: Food,
+  market: Market,
+  park: Park,
+  ocean: Ocean,
+  drive: Drive
 };
 
 const placeCollectionByType = {
@@ -1017,7 +1025,11 @@ const placeCollectionByType = {
   cafe: "cafes",
   restaurant: "restaurants",
   lodging: "lodgings",
-  food: "foods"
+  food: "foods",
+  market: "markets",
+  park: "parks",
+  ocean: "oceans",
+  drive: "drives"
 };
 
 function parsePlaceReference(value = {}) {
@@ -2704,6 +2716,33 @@ app.get("/foods/:id", async (req, res) => {
   const data = await Food.findOne({ id: Number(req.params.id) }).lean();
   data ? res.json(await attachRatingSummaries("food", data)) : res.status(404).send("Not Found");
 });
+
+function registerThemeRoutes(endpoint, placeType, model) {
+  app.get(`/${endpoint}`, async (req, res) => {
+    const stored = USE_LOCAL_DB ? (localDB[endpoint] || []) : await model.find({}).lean();
+    const data = [...stored, ...await publishedExternalPlaces(placeType)];
+    res.json(await attachRatingSummaries(placeType, data));
+  });
+
+  app.get(`/${endpoint}/:id`, async (req, res) => {
+    const id = Number(req.params.id);
+    if (USE_LOCAL_DB) {
+      const data = (localDB[endpoint] || []).find(item => item.id === id);
+      return data
+        ? res.json(await attachRatingSummaries(placeType, data))
+        : res.status(404).send("Not Found");
+    }
+    const data = await model.findOne({ id }).lean();
+    return data
+      ? res.json(await attachRatingSummaries(placeType, data))
+      : res.status(404).send("Not Found");
+  });
+}
+
+registerThemeRoutes("markets", "market", Market);
+registerThemeRoutes("parks", "park", Park);
+registerThemeRoutes("oceans", "ocean", Ocean);
+registerThemeRoutes("drives", "drive", Drive);
 
 
 app.get("/collections", async (req, res) => {
