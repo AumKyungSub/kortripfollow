@@ -1093,7 +1093,7 @@ function matchesPlaceSearch(place, query) {
   return searchable.includes(query.toLocaleLowerCase());
 }
 
-async function searchVisiblePlaces(query, limit = 100) {
+async function searchVisiblePlaces(query) {
   let internalPlaces;
   if (USE_LOCAL_DB) {
     internalPlaces = Object.entries(placeCollectionByType)
@@ -1114,20 +1114,20 @@ async function searchVisiblePlaces(query, limit = 100) {
       ] } : {})
     };
     const groups = await Promise.all(Object.entries(placeModelByType).map(
-      async ([placeType, model]) => (await model.find(filter).limit(limit).lean())
+      async ([placeType, model]) => (await model.find(filter).lean())
         .map(place => placeSummary(placeType, place))
     ));
     internalPlaces = groups.flat();
   }
 
   const externalPlaces = mongoReady
-    ? (await ExternalPlace.find({ status: "published" }).limit(limit).lean())
+    ? (await ExternalPlace.find({ status: "published" }).lean())
       .map(externalPlaceToPublic)
       .filter(place => place && matchesPlaceSearch(place, query))
       .map(place => placeSummary(place.placeType, place))
     : [];
 
-  return [...internalPlaces, ...externalPlaces].slice(0, limit);
+  return [...internalPlaces, ...externalPlaces];
 }
 
 async function validatePlaceReferences(references) {
