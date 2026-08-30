@@ -403,6 +403,45 @@ const externalPlaceImageSchema = new mongoose.Schema({
   provider: { type: String, default: "한국관광공사 TourAPI" }
 }, { _id: false });
 
+const localizedRouteTextSchema = new mongoose.Schema({
+  ko: { type: String, default: "", trim: true, maxlength: 500 },
+  en: { type: String, default: "", trim: true, maxlength: 500 }
+}, { _id: false });
+
+const driveRoutePointSchema = new mongoose.Schema({
+  name: { type: localizedRouteTextSchema, default: undefined },
+  address: { type: localizedRouteTextSchema, default: undefined },
+  latitude: { type: Number, default: null, min: -90, max: 90 },
+  longitude: { type: Number, default: null, min: -180, max: 180 }
+}, { _id: false });
+
+const driveWaypointSchema = new mongoose.Schema({
+  name: { type: localizedRouteTextSchema, default: undefined },
+  latitude: { type: Number, default: null, min: -90, max: 90 },
+  longitude: { type: Number, default: null, min: -180, max: 180 },
+  googleEnabled: { type: Boolean, default: true }
+}, { _id: false });
+
+const drivePathPointSchema = new mongoose.Schema({
+  latitude: { type: Number, required: true, min: -90, max: 90 },
+  longitude: { type: Number, required: true, min: -180, max: 180 }
+}, { _id: false });
+
+const driveRouteSchema = new mongoose.Schema({
+  start: { type: driveRoutePointSchema, default: undefined },
+  waypoints: {
+    type: [driveWaypointSchema],
+    default: [],
+    validate: {
+      validator: value => value.length <= 5,
+      message: "경유지는 최대 5개까지 저장할 수 있습니다"
+    }
+  },
+  destination: { type: driveRoutePointSchema, default: undefined },
+  routePath: { type: [drivePathPointSchema], default: [] },
+  routeSource: { type: String, enum: ["OpenStreetMap"], default: "OpenStreetMap" }
+}, { _id: false });
+
 const externalPlaceSchema = new mongoose.Schema({
   source: { type: String, enum: ["tourApi", "manual"], required: true },
   externalId: { type: String, required: true, trim: true },
@@ -434,6 +473,7 @@ const externalPlaceSchema = new mongoose.Schema({
     latitude: { type: Number, default: null },
     longitude: { type: Number, default: null }
   },
+  driveRoute: { type: driveRouteSchema, default: undefined },
   selectedImage: { type: externalPlaceImageSchema, default: undefined },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }
@@ -449,6 +489,85 @@ externalPlaceSchema.index(
 );
 
 const ExternalPlace = mongoose.model("ExternalPlace", externalPlaceSchema);
+
+function invalidDriveRoute(message) {
+  const error = new Error(message);
+  error.status = 400;
+  return error;
+}
+
+function normalizeOptionalCoordinate(value, type) {
+  if (value === undefined || value === null || value === "") return null;
+  const coordinate = Number(value);
+  const valid = Number.isFinite(coordinate) && (type === "latitude"
+    ? coordinate >= -90 && coordinate <= 90
+    : coordinate >= -180 && coordinate <= 180);
+  if (!valid) {
+    throw invalidDriveRoute(`올바른 ${type === "latitude" ? "위도" : "경도"}를 입력하세요`);
+  }
+  return coordinate;
+}
+
+function normalizeRouteText(value) {
+  const text = value && typeof value === "object" ? value : {};
+  return {
+    ko: typeof text.ko === "string" ? text.ko.trim() : "",
+    en: typeof text.en === "string" ? text.en.trim() : ""
+  };
+}
+
+function normalizeDriveRoutePoint(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw invalidDriveRoute("출발지 또는 도착지 정보가 올바르지 않습니다");
+  }
+  return {
+    name: normalizeRouteText(value.name),
+    address: normalizeRouteText(value.address),
+    latitude: normalizeOptionalCoordinate(value.latitude, "latitude"),
+    longitude: normalizeOptionalCoordinate(value.longitude, "longitude")
+  };
+}
+
+function normalizeDriveRoute(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw invalidDriveRoute("드라이브 경로 정보가 올바르지 않습니다");
+  }
+  const waypoints = Array.isArray(value.waypoints) ? value.waypoints : [];
+  if (waypoints.length > 5) throw invalidDriveRoute("경유지는 최대 5개까지 저장할 수 있습니다");
+  const normalizedWaypoints = waypoints.map(waypoint => ({
+    name: normalizeRouteText(waypoint?.name),
+    latitude: normalizeOptionalCoordinate(waypoint?.latitude, "latitude"),
+    longitude: normalizeOptionalCoordinate(waypoint?.longitude, "longitude"),
+    googleEnabled: waypoint?.googleEnabled !== false
+  }));
+  if (normalizedWaypoints.filter(waypoint => waypoint.googleEnabled).length > 3) {
+    throw invalidDriveRoute("Google 지도용 경유지는 최대 3개까지 선택할 수 있습니다");
+  }
+
+  const routePath = Array.isArray(value.routePath) ? value.routePath : [];
+  if (routePath.length > 20000) {
+    throw invalidDriveRoute("경로 좌표는 최대 20,000개까지 저장할 수 있습니다");
+  }
+
+  return {
+    start: normalizeDriveRoutePoint(value.start),
+    waypoints: normalizedWaypoints,
+    destination: normalizeDriveRoutePoint(value.destination),
+    routePath: routePath.map(point => {
+      const latitude = normalizeOptionalCoordinate(point?.latitude, "latitude");
+      const longitude = normalizeOptionalCoordinate(point?.longitude, "longitude");
+      if (latitude === null || longitude === null) {
+        throw invalidDriveRoute("경로 좌표에는 위도와 경도를 모두 입력하세요");
+      }
+      return { latitude, longitude };
+    }),
+    routeSource: "OpenStreetMap"
+  };
+}
+
+function isCompleteDriveRoutePoint(point) {
+  return Number.isFinite(point?.latitude) && Number.isFinite(point?.longitude);
+}
 
 const EXTERNAL_PUBLIC_ID_OFFSET = 1_000_000_000;
 const MANUAL_PUBLIC_ID_OFFSET = 3_000_000_000;
@@ -504,6 +623,9 @@ function externalPlaceToPublic(place) {
         ? `${place.coordinates.latitude},${place.coordinates.longitude}`
         : ""
     },
+    ...(place.placeType === "drive" && place.driveRoute
+      ? { driveRoute: place.driveRoute }
+      : {}),
     description: {
       short: { ko: koSummary, en: enSummary },
       slide: { ko: koSummary, en: enSummary },
@@ -1568,6 +1690,18 @@ app.patch("/operator/external-places/:id", requireAuth, requireOperator, async (
     if (updates.regionCode && !EXTERNAL_REGION_LABELS[updates.regionCode]) {
       return res.status(400).json({ error: "Invalid region code" });
     }
+    const existing = await ExternalPlace.findById(req.params.id)
+      .select("placeType driveRoute selectedImage.originalUrl")
+      .lean();
+    if (!existing) return res.status(404).json({ error: "Place not found" });
+
+    const effectivePlaceType = updates.placeType || existing.placeType;
+    if (effectivePlaceType === "drive" && req.body?.driveRoute !== undefined) {
+      updates.driveRoute = normalizeDriveRoute(req.body.driveRoute);
+      updates["coordinates.latitude"] = updates.driveRoute.start.latitude;
+      updates["coordinates.longitude"] = updates.driveRoute.start.longitude;
+    }
+
     const officialLinks = {
       homepage: req.body?.homepage,
       instagram: req.body?.instagram
@@ -1587,12 +1721,12 @@ app.patch("/operator/external-places/:id", requireAuth, requireOperator, async (
     }
     updates.updatedBy = req.user._id;
 
-    const existing = await ExternalPlace.findById(req.params.id)
-      .select("selectedImage.originalUrl")
-      .lean();
     const updateOperation = { $set: updates };
+    if (effectivePlaceType !== "drive" && existing.driveRoute) {
+      updateOperation.$unset = { driveRoute: 1 };
+    }
     if (existing?.selectedImage && !existing.selectedImage.originalUrl) {
-      updateOperation.$unset = { selectedImage: 1 };
+      updateOperation.$unset = { ...(updateOperation.$unset || {}), selectedImage: 1 };
     }
     const draft = await ExternalPlace.findOneAndUpdate(
       { _id: req.params.id, status: { $in: ["draft", "published"] } },
@@ -1652,6 +1786,24 @@ app.post("/operator/external-places/:id/publish", requireAuth, requireOperator, 
     if (!draft.descriptionEn?.trim()) missing.push("영어 상세 설명");
     if (draft.source === "manual" && !Number.isFinite(draft.coordinates?.latitude)) missing.push("위도");
     if (draft.source === "manual" && !Number.isFinite(draft.coordinates?.longitude)) missing.push("경도");
+    if (draft.placeType === "drive") {
+      if (!isCompleteDriveRoutePoint(draft.driveRoute?.start)) missing.push("드라이브 출발지 좌표");
+      if (!isCompleteDriveRoutePoint(draft.driveRoute?.destination)) missing.push("드라이브 도착지 좌표");
+      if (!draft.driveRoute?.start?.name?.ko?.trim()) missing.push("드라이브 출발지 한국어 이름");
+      if (!draft.driveRoute?.start?.name?.en?.trim()) missing.push("드라이브 출발지 영어 이름");
+      if (!draft.driveRoute?.start?.address?.ko?.trim()) missing.push("드라이브 출발지 한국어 주소");
+      if (!draft.driveRoute?.start?.address?.en?.trim()) missing.push("드라이브 출발지 영어 주소");
+      if (!draft.driveRoute?.destination?.name?.ko?.trim()) missing.push("드라이브 도착지 한국어 이름");
+      if (!draft.driveRoute?.destination?.name?.en?.trim()) missing.push("드라이브 도착지 영어 이름");
+      if (!draft.driveRoute?.destination?.address?.ko?.trim()) missing.push("드라이브 도착지 한국어 주소");
+      if (!draft.driveRoute?.destination?.address?.en?.trim()) missing.push("드라이브 도착지 영어 주소");
+      if (!Array.isArray(draft.driveRoute?.routePath) || draft.driveRoute.routePath.length < 2) {
+        missing.push("드라이브 경로 좌표 2개 이상");
+      }
+      if ((draft.driveRoute?.waypoints || []).some(waypoint => !isCompleteDriveRoutePoint(waypoint))) {
+        missing.push("모든 드라이브 경유지 좌표");
+      }
+    }
     if (missing.length) {
       return res.status(400).json({ error: `공개 전 필수 항목을 입력하세요: ${missing.join(", ")}` });
     }
