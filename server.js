@@ -9,7 +9,9 @@ dotenv.config();
 const app = express();
 
 const MONGO_URI = process.env.MONGO_URI;
-const MONGO_DB_NAME = process.env.MONGO_DB_NAME;
+// Choose the database from the server environment, never from the browser host or URI default.
+// Development (localhost/LAN) must never use the production database.
+const MONGO_DB_NAME = process.env.NODE_ENV === "production" ? "kortripfollow" : "kortripfollow_dev";
 const HAS_MONGO_DB = Boolean(MONGO_URI);
 const TOUR_API_SERVICE_KEY = process.env.TOUR_API_SERVICE_KEY?.trim() || "";
 const HAS_TOUR_API = Boolean(TOUR_API_SERVICE_KEY);
@@ -380,10 +382,49 @@ function createContentModel(name, collection) {
   );
 }
 
-const Blog = createContentModel("Blog", "blogs");
-const Ranking = createContentModel("Ranking", "rankings");
+const blogSchema = new mongoose.Schema({
+  // MongoDB의 _id와 별도로 관리하는 순차 번호입니다.
+  // Mongoose 기본 id 가상 필드와 충돌하지 않도록 실제 필드로 선언합니다.
+  id: {
+    type: Number,
+    required: true,
+    min: 1,
+    immutable: true,
+    validate: {
+      validator: Number.isSafeInteger,
+      message: "id must be a positive safe integer"
+    }
+  }
+}, { strict: false, collection: "blogs", id: false });
+
+const Blog = mongoose.model("Blog", blogSchema);
+const rankingSchema = new mongoose.Schema({
+  id: {
+    type: Number,
+    required: true,
+    min: 1,
+    immutable: true,
+    validate: {
+      validator: Number.isSafeInteger,
+      message: "id must be a positive safe integer"
+    }
+  }
+}, { strict: false, collection: "rankings", id: false });
+const Ranking = mongoose.model("Ranking", rankingSchema);
 const Season = createContentModel("Season", "seasons");
-const Cafe = createContentModel("Cafe", "cafes");
+const cafeSchema = new mongoose.Schema({
+  id: {
+    type: Number,
+    required: true,
+    min: 1,
+    immutable: true,
+    validate: {
+      validator: Number.isSafeInteger,
+      message: "id must be a positive safe integer"
+    }
+  }
+}, { strict: false, collection: "cafes", id: false });
+const Cafe = mongoose.model("Cafe", cafeSchema);
 const Restaurant = createContentModel("Restaurant", "restaurants");
 const Lodging = createContentModel("Lodging", "lodgings");
 const Food = createContentModel("Food", "foods");
@@ -2749,6 +2790,569 @@ app.delete("/visits/:id", requireAuth, async (req, res, next) => {
     return next(error);
   }
 });
+
+const CRUD_PLACE_REFERENCE_MODELS = {
+  rankings: Ranking,
+  cafes: Cafe,
+  restaurants: Restaurant
+};
+const CRUD_PLACE_REFERENCE_NAMES = Object.keys(CRUD_PLACE_REFERENCE_MODELS);
+
+function validateOperatorBlog(body) {
+  const fail = message => {
+    const error = new Error(message);
+    error.status = 400;
+    throw error;
+  };
+
+  if (!body || !CRUD_PLACE_REFERENCE_NAMES.includes(body.typeTable)) {
+    fail("연결할 카테고리를 선택하세요.");
+  }
+  if (!Number.isSafeInteger(body.otherID) || body.otherID < 1) {
+    fail("연결할 장소를 선택하세요.");
+  }
+  if (typeof body.visibility !== "boolean") {
+    fail("표시 여부를 선택하세요.");
+  }
+  if (
+    typeof body.stars !== "string" ||
+    !/^\d(?:\.\d{1,2})?$/.test(body.stars) ||
+    Number(body.stars) > 5
+  ) {
+    fail("평점은 0~5 사이로 입력하세요.");
+  }
+  for (const language of ["ko", "en"]) {
+    if (
+      typeof body.date?.[language] !== "string" ||
+      !body.date[language].trim() ||
+      body.date[language].length > 100
+    ) {
+      fail("한국어와 영어 날짜를 입력하세요.");
+    }
+  }
+
+  return {
+    visibility: body.visibility,
+    typeTable: body.typeTable,
+    otherID: body.otherID,
+    stars: body.stars,
+    date: {
+      ko: body.date.ko.trim(),
+      en: body.date.en.trim()
+    }
+  };
+}
+
+function validateOperatorCafe(body) {
+  const fail = message => {
+    const error = new Error(message);
+    error.status = 400;
+    throw error;
+  };
+  const text = (value, label, { required = false, max = 500 } = {}) => {
+    if (typeof value !== "string") fail(`${label} 형식이 올바르지 않습니다.`);
+    const result = value.trim();
+    if (required && !result) fail(`${label}을(를) 입력하세요.`);
+    if (result.length > max) fail(`${label}이(가) 너무 깁니다.`);
+    return result;
+  };
+  const url = (value, label) => {
+    const result = text(value, label, { max: 2000 });
+    if (!result) return "";
+    try {
+      const parsed = new URL(result);
+      if (!["http:", "https:"].includes(parsed.protocol)) throw new Error();
+    } catch {
+      fail(`${label}은(는) http 또는 https 주소로 입력하세요.`);
+    }
+    return result;
+  };
+  const languageText = (value, label, options) => ({
+    ko: text(value?.ko, `${label} 한국어`, options),
+    en: text(value?.en, `${label} 영어`, options)
+  });
+
+  if (!body || typeof body.visibility !== "boolean") {
+    fail("표시 여부를 선택하세요.");
+  }
+  const imageFolder = text(body.imageFolder, "이미지 폴더명", { required: true, max: 100 });
+  if (!/^[A-Za-z0-9_-]+$/.test(imageFolder)) {
+    fail("이미지 폴더명에는 영문, 숫자, 밑줄, 하이픈만 사용할 수 있습니다.");
+  }
+
+  const latitude = Number(body.location?.latitude);
+  const longitude = Number(body.location?.longitude);
+  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
+    fail("위도를 -90~90 사이로 입력하세요.");
+  }
+  if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+    fail("경도를 -180~180 사이로 입력하세요.");
+  }
+
+  const region = languageText(body.location?.region, "지역명", { required: true, max: 100 });
+  region.code = text(body.location?.region?.code, "지역 코드", { required: true, max: 30 });
+  const address = {
+    ko: (body.location?.address?.ko || []).map((value, index) =>
+      text(value, `한국어 주소 ${index + 1}`, { required: true, max: 300 })),
+    en: (body.location?.address?.en || []).map((value, index) =>
+      text(value, `영어 주소 ${index + 1}`, { required: true, max: 300 }))
+  };
+  if (address.ko.length !== 2 || address.en.length !== 2) {
+    fail("한국어와 영어 주소를 각각 두 줄로 입력하세요.");
+  }
+
+  const menu = { ko: [], en: [] };
+  if (!Array.isArray(body.description?.menu?.ko) || !Array.isArray(body.description?.menu?.en)) {
+    fail("메뉴 형식이 올바르지 않습니다.");
+  }
+  if (body.description.menu.ko.length !== body.description.menu.en.length) {
+    fail("한국어와 영어 메뉴 개수가 일치해야 합니다.");
+  }
+  if (body.description.menu.ko.length > 100) fail("메뉴는 100개까지 등록할 수 있습니다.");
+  for (let index = 0; index < body.description.menu.ko.length; index += 1) {
+    menu.ko.push({
+      name: text(body.description.menu.ko[index]?.name, `메뉴 ${index + 1} 한국어 이름`, { required: true, max: 200 }),
+      price: text(body.description.menu.ko[index]?.price, `메뉴 ${index + 1} 한국어 가격`, { required: true, max: 100 })
+    });
+    menu.en.push({
+      name: text(body.description.menu.en[index]?.name, `메뉴 ${index + 1} 영어 이름`, { required: true, max: 200 }),
+      price: text(body.description.menu.en[index]?.price, `메뉴 ${index + 1} 영어 가격`, { required: true, max: 100 })
+    });
+  }
+
+  const operating = { ko: [], en: [] };
+  for (const language of ["ko", "en"]) {
+    const items = body.operating?.[language];
+    if (!Array.isArray(items) || items.length > 10) fail("영업 정보 형식이 올바르지 않습니다.");
+    operating[language] = items.map((item, index) => {
+      if (item?.type === "time") {
+        return {
+          type: "time",
+          label: text(item.label, `영업시간 ${index + 1} 라벨`, { max: 100 }),
+          value: text(item.value, `영업시간 ${index + 1}`, { required: true, max: 100 })
+        };
+      }
+      if (item?.type === "note") {
+        return { type: "note", text: text(item.text, `영업 안내 ${index + 1}`, { required: true, max: 300 }) };
+      }
+      fail("영업 정보 유형이 올바르지 않습니다.");
+    });
+  }
+
+  const booleanInfo = {};
+  for (const name of ["parking", "takeOut", "pet", "reserve"]) {
+    if (typeof body.info?.[name] !== "boolean") fail("편의시설 정보를 확인하세요.");
+    booleanInfo[name] = body.info[name];
+  }
+  const videoLink = url(body.videoLink, "영상 URL");
+  const reviewLink = url(body.reviewLink, "리뷰 URL");
+
+  return {
+    visibility: body.visibility,
+    img: { link: `/images/detailTheme/${imageFolder}/${imageFolder}` },
+    location: {
+      name: languageText(body.location?.name, "장소명", { required: true, max: 200 }),
+      region,
+      address,
+      latLng: `${latitude} , ${longitude}`,
+      placeID: text(body.location?.placeID, "장소 ID", { required: true, max: 100 }),
+      homepage: url(body.location?.homepage, "홈페이지 URL"),
+      instagram: url(body.location?.instagram, "Instagram URL"),
+      chain: text(body.location?.chain, "체인 정보", { max: 200 }),
+      nearby: text(body.location?.nearby, "주변 정보", { max: 500 })
+    },
+    description: {
+      slide: languageText(body.description?.slide, "내용", { required: true, max: 3000 }),
+      title: languageText(body.description?.title, "제목", { required: true, max: 500 }),
+      menu,
+      menuLink: url(body.description?.menuLink, "전체 메뉴 URL")
+    },
+    info: booleanInfo,
+    operating,
+    video: { existence: Boolean(videoLink), link: videoLink },
+    review: { existence: Boolean(reviewLink), link: reviewLink }
+  };
+}
+
+function validateOperatorRanking(body) {
+  const fail = message => {
+    const error = new Error(message);
+    error.status = 400;
+    throw error;
+  };
+  const text = (value, label, { required = false, max = 500, nullable = false } = {}) => {
+    if (nullable && (value === null || value === undefined)) return null;
+    if (typeof value !== "string") fail(`${label} 형식이 올바르지 않습니다.`);
+    const result = value.trim();
+    if (required && !result) fail(`${label}을(를) 입력하세요.`);
+    if (result.length > max) fail(`${label}이(가) 너무 깁니다.`);
+    return result;
+  };
+  const url = (value, label) => {
+    const result = text(value, label, { max: 2000 });
+    if (!result) return "";
+    try {
+      const parsed = new URL(result);
+      if (!["http:", "https:"].includes(parsed.protocol)) throw new Error();
+    } catch {
+      fail(`${label}은(는) http 또는 https 주소로 입력하세요.`);
+    }
+    return result;
+  };
+  const localized = (value, label, options) => ({
+    ko: text(value?.ko, `${label} 한국어`, options),
+    en: text(value?.en, `${label} 영어`, options)
+  });
+  const localizedRows = (value, label, { maxRows = 100 } = {}) => {
+    if (value === null || value === undefined) return null;
+    const result = {};
+    for (const language of ["ko", "en"]) {
+      const rows = value?.[language];
+      if (!Array.isArray(rows) || rows.length > maxRows) fail(`${label} 형식이 올바르지 않습니다.`);
+      result[language] = rows.map((row, index) => {
+        if (row?.type === "sub") {
+          return { type: "sub", text: text(row.text, `${label} ${index + 1} 안내`, { required: true, max: 1000 }) };
+        }
+        if (row?.type !== "fee") fail(`${label} 항목 유형이 올바르지 않습니다.`);
+        return {
+          type: "fee",
+          title: text(row.title, `${label} ${index + 1} 구분`, { max: 300, nullable: true }),
+          label: text(row.label, `${label} ${index + 1} 항목`, { max: 500, nullable: true }),
+          value: text(row.value, `${label} ${index + 1} 값`, { max: 200, nullable: true }),
+          exp: text(row.exp, `${label} ${index + 1} 위 설명`, { max: 1000, nullable: true }),
+          exps: text(row.exps, `${label} ${index + 1} 아래 설명`, { max: 1000, nullable: true })
+        };
+      });
+    }
+    return result;
+  };
+
+  if (!body || typeof body.visibility !== "boolean") fail("표시 여부를 선택하세요.");
+  const imageFolder = text(body.imageFolder, "이미지 폴더명", { required: true, max: 100 });
+  if (!/^[A-Za-z0-9_-]+$/.test(imageFolder)) {
+    fail("이미지 폴더명에는 영문, 숫자, 밑줄, 하이픈만 사용할 수 있습니다.");
+  }
+  const latitude = Number(body.location?.latitude);
+  const longitude = Number(body.location?.longitude);
+  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) fail("위도를 -90~90 사이로 입력하세요.");
+  if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) fail("경도를 -180~180 사이로 입력하세요.");
+
+  const region = localized(body.location?.region, "지역명", { required: true, max: 100 });
+  region.code = text(body.location?.region?.code, "지역 코드", { required: true, max: 30 });
+  const address = {};
+  for (const language of ["ko", "en"]) {
+    const rows = body.location?.address?.[language];
+    if (!Array.isArray(rows) || rows.length !== 2) fail("한국어와 영어 주소를 각각 두 줄로 입력하세요.");
+    address[language] = rows.map((row, index) => text(row, `${language === "ko" ? "한국어" : "영어"} 주소 ${index + 1}`, { required: true, max: 300 }));
+  }
+
+  if (typeof body.parking?.existence !== "boolean" || typeof body.parking?.fee !== "boolean") {
+    fail("주차 정보를 확인하세요.");
+  }
+  const parkingLevel = Number(body.parking?.level);
+  const legacyParkingLevel = Number(body.parking?.legacyLevel);
+  const allowedLegacyLevel = Number.isSafeInteger(legacyParkingLevel) && parkingLevel === legacyParkingLevel;
+  if (body.parking.existence && (!Number.isSafeInteger(parkingLevel) || ((!allowedLegacyLevel) && (parkingLevel < 1 || parkingLevel > 5)))) {
+    fail("주차 난이도는 1~5 중에서 선택하세요.");
+  }
+  const parkingLatitude = Number(body.parking?.latitude);
+  const parkingLongitude = Number(body.parking?.longitude);
+  if (body.parking.existence && (!Number.isFinite(parkingLatitude) || parkingLatitude < -90 || parkingLatitude > 90)) {
+    fail("주차장 위도를 -90~90 사이로 입력하세요.");
+  }
+  if (body.parking.existence && (!Number.isFinite(parkingLongitude) || parkingLongitude < -180 || parkingLongitude > 180)) {
+    fail("주차장 경도를 -180~180 사이로 입력하세요.");
+  }
+
+  const videoLink = url(body.videoLink, "영상 URL");
+  const reviewLink = url(body.reviewLink, "리뷰 URL");
+  const seasons = Array.isArray(body.season) ? body.season : [];
+  const validSeasons = ["SPRING", "SUMMER", "FALL", "WINTER"];
+  if (seasons.some(value => !validSeasons.includes(value)) || new Set(seasons).size !== seasons.length) {
+    fail("계절 정보를 확인하세요.");
+  }
+
+  return {
+    visibility: body.visibility,
+    img: { link: `/images/detailLocation/${imageFolder}/${imageFolder}` },
+    location: {
+      name: localized(body.location?.name, "장소명", { required: true, max: 200 }),
+      region,
+      address,
+      latLng: `${latitude} , ${longitude}`,
+      placeID: text(body.location?.placeID, "장소 ID", { required: true, max: 100 }),
+      homepage: url(body.location?.homepage, "홈페이지 URL"),
+      instagram: url(body.location?.instagram, "Instagram URL"),
+      nearby: text(body.location?.nearby, "주변 정보", { max: 500 })
+    },
+    description: {
+      short: localized(body.description?.short, "소개글", { required: true, max: 1000 }),
+      slide: localized(body.description?.slide, "배너글", { required: true, max: 3000 }),
+      title: localized(body.description?.title, "제목", { required: true, max: 500 }),
+      main: localized(body.description?.main, "설명문", { required: true, max: 10000 }),
+      last: localized(body.description?.last, "마무리글", { required: true, max: 3000 })
+    },
+    parking: {
+      existence: body.parking.existence,
+      fee: body.parking.existence ? body.parking.fee : false,
+      address: body.parking.existence ? localized(body.parking.address, "주차장 주소", { required: true, max: 500 }) : { ko: "", en: "" },
+      latLng: body.parking.existence
+        ? `${parkingLatitude} , ${parkingLongitude}`
+        : "",
+      level: body.parking.existence ? parkingLevel : null
+    },
+    operating: {
+      operatingHour: localizedRows(body.operating?.operatingHour, "운영시간"),
+      closeDay: localizedRows(body.operating?.closeDay, "휴무일"),
+      entranceFee: localizedRows(body.operating?.entranceFee, "입장료"),
+      etcFee: localizedRows(body.operating?.etcFee, "기타 요금")
+    },
+    review: { existence: Boolean(reviewLink), link: reviewLink },
+    video: { existence: Boolean(videoLink), link: videoLink },
+    season: seasons
+  };
+}
+
+function registerOperatorCrudPlacesRoutes() {
+  const base = "/operator/crud-places";
+  app.use(base, requireAuth, requireOperator);
+
+  const findAll = async (name, model) => (
+    USE_LOCAL_DB ? (localDB?.[name] || []) : model.find({}).lean()
+  );
+
+  app.get(`${base}/references`, async (req, res) => {
+    const entries = await Promise.all(
+      CRUD_PLACE_REFERENCE_NAMES.map(async name => [
+        name,
+        (await findAll(name, CRUD_PLACE_REFERENCE_MODELS[name])).map(place => ({
+          id: place.id,
+          name:
+            place.location?.name?.ko ||
+            place.location?.name?.en ||
+            `${name} #${place.id}`,
+          address: [].concat(place.location?.address?.ko || []).join(" ")
+        }))
+      ])
+    );
+    res.json(Object.fromEntries(entries));
+  });
+
+  app.get(`${base}/blogs`, async (req, res) => {
+    const items = [...await findAll("blogs", Blog)].sort((a, b) => b.id - a.id);
+    res.json({ items, readOnly: USE_LOCAL_DB });
+  });
+
+  app.get(`${base}/cafes`, async (req, res) => {
+    const items = [...await findAll("cafes", Cafe)].sort((a, b) => b.id - a.id);
+    res.json({ items, readOnly: USE_LOCAL_DB });
+  });
+
+  app.get(`${base}/rankings`, async (req, res) => {
+    const items = [...await findAll("rankings", Ranking)].sort((a, b) => b.id - a.id);
+    res.json({ items, readOnly: USE_LOCAL_DB });
+  });
+
+  app.use(base, (req, res, next) => {
+    if (USE_LOCAL_DB) {
+      return res.status(503).json({
+        error: "로컬 JSON 모드에서는 조회만 가능합니다. MongoDB 연결 후 저장하세요."
+      });
+    }
+    return next();
+  });
+
+  async function blogPayload(body) {
+    const data = validateOperatorBlog(body);
+    const reference = await CRUD_PLACE_REFERENCE_MODELS[data.typeTable]
+      .findOne({ id: data.otherID })
+      .lean();
+    if (!reference) {
+      const error = new Error("연결할 장소가 존재하지 않습니다.");
+      error.status = 400;
+      throw error;
+    }
+    return data;
+  }
+
+  function requestId(req) {
+    const id = Number(req.params.id);
+    if (!Number.isSafeInteger(id) || id < 1) {
+      const error = new Error("잘못된 ID입니다.");
+      error.status = 400;
+      throw error;
+    }
+    return id;
+  }
+
+  let blogIdIndexReady;
+  app.post(`${base}/blogs`, async (req, res) => {
+    const data = await blogPayload(req.body);
+    blogIdIndexReady ??= Blog.collection
+      .createIndex({ id: 1 }, { unique: true })
+      .catch(error => {
+        blogIdIndexReady = undefined;
+        throw error;
+      });
+    await blogIdIndexReady;
+
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const latest = await Blog.findOne({}).sort({ id: -1 }).lean();
+      const id = (latest?.id ?? 0) + 1;
+      if (!Number.isSafeInteger(id) || id < 1) {
+        const error = new Error("기존 ID 구조를 확인해야 합니다.");
+        error.status = 409;
+        throw error;
+      }
+      try {
+        return res.status(201).json(await Blog.create({ ...data, id }));
+      } catch (error) {
+        if (error.code !== 11000 || !error.keyPattern?.id) throw error;
+      }
+    }
+    return res.status(409).json({
+      error: "다른 등록 작업과 겹쳤습니다. 다시 저장하세요."
+    });
+  });
+
+  app.patch(`${base}/blogs/:id`, async (req, res) => {
+    const id = requestId(req);
+    const data = await blogPayload(req.body);
+    const updated = await Blog.findOneAndUpdate(
+      { id },
+      { $set: data },
+      { new: true }
+    );
+    if (!updated) {
+      return res.status(404).json({
+        error: "삭제되었거나 존재하지 않는 항목입니다."
+      });
+    }
+    return res.json(updated);
+  });
+
+  app.delete(`${base}/blogs/:id`, async (req, res) => {
+    const deleted = await Blog.findOneAndDelete({ id: requestId(req) });
+    if (!deleted) {
+      return res.status(404).json({
+        error: "삭제되었거나 존재하지 않는 항목입니다."
+      });
+    }
+    return res.status(204).end();
+  });
+
+  let cafeIdIndexReady;
+  app.post(`${base}/cafes`, async (req, res) => {
+    const data = validateOperatorCafe(req.body);
+    cafeIdIndexReady ??= Cafe.collection
+      .createIndex({ id: 1 }, { unique: true })
+      .catch(error => {
+        cafeIdIndexReady = undefined;
+        throw error;
+      });
+    await cafeIdIndexReady;
+
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const latest = await Cafe.findOne({}).sort({ id: -1 }).lean();
+      const id = (latest?.id ?? 0) + 1;
+      if (!Number.isSafeInteger(id) || id < 1) {
+        const error = new Error("기존 ID 구조를 확인해야 합니다.");
+        error.status = 409;
+        throw error;
+      }
+      try {
+        return res.status(201).json(await Cafe.create({ ...data, id }));
+      } catch (error) {
+        if (error.code !== 11000 || !error.keyPattern?.id) throw error;
+      }
+    }
+    return res.status(409).json({
+      error: "다른 등록 작업과 겹쳤습니다. 다시 저장하세요."
+    });
+  });
+
+  app.patch(`${base}/cafes/:id`, async (req, res) => {
+    const id = requestId(req);
+    const data = validateOperatorCafe(req.body);
+    const updated = await Cafe.findOneAndUpdate(
+      { id },
+      { $set: data },
+      { new: true, runValidators: true }
+    );
+    if (!updated) {
+      return res.status(404).json({
+        error: "삭제되었거나 존재하지 않는 카페입니다."
+      });
+    }
+    return res.json(updated);
+  });
+
+  app.delete(`${base}/cafes/:id`, async (req, res) => {
+    const id = requestId(req);
+    const linkedBlog = await Blog.exists({ typeTable: "cafes", otherID: id });
+    if (linkedBlog) {
+      return res.status(409).json({
+        error: "blogs에서 연결 중인 카페입니다. 연결된 리뷰를 먼저 변경하거나 삭제하세요."
+      });
+    }
+    const deleted = await Cafe.findOneAndDelete({ id });
+    if (!deleted) {
+      return res.status(404).json({
+        error: "삭제되었거나 존재하지 않는 카페입니다."
+      });
+    }
+    return res.status(204).end();
+  });
+
+  let rankingIdIndexReady;
+  app.post(`${base}/rankings`, async (req, res) => {
+    const data = validateOperatorRanking(req.body);
+    rankingIdIndexReady ??= Ranking.collection
+      .createIndex({ id: 1 }, { unique: true })
+      .catch(error => {
+        rankingIdIndexReady = undefined;
+        throw error;
+      });
+    await rankingIdIndexReady;
+
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const latest = await Ranking.findOne({}).sort({ id: -1 }).lean();
+      const id = (latest?.id ?? 0) + 1;
+      if (!Number.isSafeInteger(id) || id < 1) {
+        const error = new Error("기존 ID 구조를 확인해야 합니다.");
+        error.status = 409;
+        throw error;
+      }
+      try {
+        return res.status(201).json(await Ranking.create({ ...data, id, top: "" }));
+      } catch (error) {
+        if (error.code !== 11000 || !error.keyPattern?.id) throw error;
+      }
+    }
+    return res.status(409).json({ error: "다른 등록 작업과 겹쳤습니다. 다시 저장하세요." });
+  });
+
+  app.patch(`${base}/rankings/:id`, async (req, res) => {
+    const id = requestId(req);
+    const data = validateOperatorRanking(req.body);
+    const updated = await Ranking.findOneAndUpdate({ id }, { $set: data }, { new: true, runValidators: true });
+    if (!updated) return res.status(404).json({ error: "삭제되었거나 존재하지 않는 관광지입니다." });
+    return res.json(updated);
+  });
+
+  app.delete(`${base}/rankings/:id`, async (req, res) => {
+    const id = requestId(req);
+    const linkedBlog = await Blog.exists({ typeTable: "rankings", otherID: id });
+    if (linkedBlog) {
+      return res.status(409).json({ error: "blogs에서 연결 중인 관광지입니다. 연결된 리뷰를 먼저 변경하거나 삭제하세요." });
+    }
+    const deleted = await Ranking.findOneAndDelete({ id });
+    if (!deleted) return res.status(404).json({ error: "삭제되었거나 존재하지 않는 관광지입니다." });
+    return res.status(204).end();
+  });
+}
+
+registerOperatorCrudPlacesRoutes();
 
 app.get("/blogs", async (req, res) => {
   const query = {};
